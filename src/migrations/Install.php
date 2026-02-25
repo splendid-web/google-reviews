@@ -2,62 +2,62 @@
 
 namespace splendidweb\googlereviews\migrations;
 
-use Craft;
 use craft\db\Migration;
-use craft\models\EntryType;
-use craft\models\Section;
-use craft\models\Section_SiteSettings;
+use craft\db\Table;
 
 class Install extends Migration
 {
     public function safeUp(): bool
     {
-        $entries = Craft::$app->getEntries();
+        $table = '{{%googlereviews_reviews}}';
 
-        if ($entries->getSectionByHandle('googleReviews') !== null) {
+        if ($this->db->tableExists($table)) {
             return true;
         }
 
-        $primarySiteId = Craft::$app->getSites()->getPrimarySite()->id;
-
-        $section = new Section([
-            'name' => 'Google Reviews',
-            'handle' => 'googleReviews',
-            'type' => Section::TYPE_CHANNEL,
-            'enableVersioning' => false,
+        $this->createTable($table, [
+            'id' => $this->primaryKey(),
+            'googleReviewId' => $this->string(255)->notNull(),
+            'authorName' => $this->string(255)->notNull()->defaultValue(''),
+            'authorPhotoUrl' => $this->string(1024)->notNull()->defaultValue(''),
+            'rating' => $this->smallInteger()->notNull()->defaultValue(0),
+            'reviewText' => $this->text(),
+            'reviewDate' => $this->dateTime(),
+            'reviewUrl' => $this->string(1024)->notNull()->defaultValue(''),
+            'source' => $this->string(50)->notNull()->defaultValue('Google'),
+            'isImported' => $this->boolean()->notNull()->defaultValue(true),
+            'featured' => $this->boolean()->notNull()->defaultValue(false),
+            'dateCreated' => $this->dateTime()->notNull(),
+            'dateUpdated' => $this->dateTime()->notNull(),
+            'uid' => $this->uid(),
         ]);
 
-        $section->setSiteSettings([
-            new Section_SiteSettings([
-                'siteId' => $primarySiteId,
-                'enabledByDefault' => true,
-                'hasUrls' => false,
-                'uriFormat' => null,
-                'template' => null,
-            ]),
-        ]);
+        $this->createIndex(null, $table, ['googleReviewId'], true);
+        $this->createIndex(null, $table, ['rating']);
+        $this->createIndex(null, $table, ['reviewDate']);
+        $this->createIndex(null, $table, ['isImported']);
+        $this->createIndex(null, $table, ['featured']);
 
-        $section->setEntryTypes([
-            new EntryType([
-                'name' => 'Google Review',
-                'handle' => 'googleReview',
-                'hasTitleField' => true,
-                'titleLabel' => 'Review Title',
-            ]),
-        ]);
+        $this->addForeignKey(
+            null,
+            $table,
+            'id',
+            Table::ELEMENTS,
+            'id',
+            'CASCADE',
+            null
+        );
 
-        return $entries->saveSection($section);
+        return true;
     }
 
     public function safeDown(): bool
     {
-        $entries = Craft::$app->getEntries();
-        $section = $entries->getSectionByHandle('googleReviews');
-
-        if ($section === null) {
-            return true;
+        $table = '{{%googlereviews_reviews}}';
+        if ($this->db->tableExists($table)) {
+            $this->dropTable($table);
         }
 
-        return $entries->deleteSectionById($section->id);
+        return true;
     }
 }

@@ -17,7 +17,7 @@ class SyncController extends Controller
         $this->stdout(sprintf("Skipped: %d\n", $result->skipped));
         $this->stdout(sprintf("Archived: %d\n", $result->archived));
 
-        if ($result->hasErrors()) {
+        if ($result->hasSyncErrors()) {
             foreach ($result->errors as $error) {
                 $this->stderr("Error: {$error}\n");
             }

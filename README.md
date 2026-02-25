@@ -11,7 +11,7 @@ Initial scaffold is in place:
 - Sync service and console command skeleton
 - Twig variable and starter rendering partial
 
-Google API ingestion and Craft entry upsert behavior are stubbed and ready for implementation.
+Google API ingestion is still stubbed, but plugin-owned custom element persistence is in place.
 
 ## Requirements
 
@@ -57,12 +57,12 @@ Open **Settings -> Plugins -> Google Reviews** and configure:
 php craft google-reviews/sync
 ```
 
-This scaffold currently syncs deterministic mock reviews so you can test end-to-end flow (migration -> sync -> entries -> render) before wiring the real Google API client.
+This scaffold currently syncs deterministic mock reviews so you can test end-to-end flow (migration -> sync -> custom elements -> render) before wiring the real Google API client.
 
 ## Twig Usage (Starter)
 
 ```twig
-{% set reviews = craft.googleReviews.entries(12).all() %}
+{% set reviews = craft.googleReviews.reviews(12).all() %}
 {% include "google-reviews/_components/reviews-carousel" with {
   reviews: reviews,
   attributionText: "Reviews from Google",
@@ -73,7 +73,7 @@ This scaffold currently syncs deterministic mock reviews so you can test end-to-
 ## Next Implementation Milestones
 
 1. Implement Google Business Profile API client and token handling.
-2. Create section/fields migration for `googleReviews`.
+2. Wire CP element index/source definitions for GoogleReview elements.
 3. Implement idempotent upsert by `googleReviewId`.
 4. Add archiving strategy for removed reviews.
 5. Add test coverage for normalization and sync behavior.

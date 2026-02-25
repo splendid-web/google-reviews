@@ -4,8 +4,9 @@ namespace splendidweb\googlereviews\services;
 
 use Craft;
 use craft\base\Component;
-use craft\elements\Entry;
+use craft\helpers\StringHelper;
 use splendidweb\googlereviews\models\SyncResult;
+use splendidweb\googlereviews\elements\GoogleReview;
 use splendidweb\googlereviews\Plugin;
 use DateTime;
 use RuntimeException;
@@ -147,61 +148,45 @@ class SyncService extends Component
      */
     private function upsertReviewEntry(array $normalizedReview): void
     {
-        $entriesService = Craft::$app->getEntries();
-        $section = $entriesService->getSectionByHandle('googleReviews');
-
-        if ($section === null) {
-            throw new RuntimeException('Section "googleReviews" is missing. Install/update the plugin migrations first.');
-        }
-
-        $entryType = $entriesService->getEntryTypeByHandle('googleReview');
-        if ($entryType === null) {
-            $sectionEntryTypes = $entriesService->getEntryTypesBySectionId($section->id);
-            $entryType = $sectionEntryTypes[0] ?? null;
-        }
-
-        if ($entryType === null) {
-            throw new RuntimeException('Entry type for section "googleReviews" is missing.');
-        }
-
         $reviewId = (string)($normalizedReview['googleReviewId'] ?? '');
         if ($reviewId === '') {
             throw new RuntimeException('Cannot upsert review without googleReviewId.');
         }
 
-        $slug = 'google-review-' . strtolower(preg_replace('/[^a-z0-9]+/', '-', $reviewId));
-        $entry = Entry::find()
-            ->section('googleReviews')
-            ->slug($slug)
+        $review = GoogleReview::find()
+            ->googleReviewId($reviewId)
             ->status(null)
-            ->site('*')
             ->one();
 
-        if (!$entry instanceof Entry) {
-            $entry = new Entry();
-            $entry->sectionId = $section->id;
-            $entry->typeId = $entryType->id;
+        if (!$review instanceof GoogleReview) {
+            $review = new GoogleReview();
         }
 
         $author = (string)($normalizedReview['authorName'] ?? 'Anonymous');
         $rating = (int)($normalizedReview['rating'] ?? 0);
-        $entry->title = sprintf('%s - %d/5', $author, $rating);
-        $entry->slug = $slug;
-        $entry->enabled = true;
+        $review->googleReviewId = $reviewId;
+        $review->title = sprintf('%s - %d/5', $author, $rating);
+        $review->slug = StringHelper::toKebabCase('google-review-' . $reviewId);
+        $review->enabled = true;
+        $review->authorName = $author;
+        $review->authorPhotoUrl = (string)($normalizedReview['authorPhotoUrl'] ?? '');
+        $review->rating = $rating;
+        $review->reviewText = (string)($normalizedReview['reviewText'] ?? '');
+        $review->reviewUrl = (string)($normalizedReview['reviewUrl'] ?? '');
+        $review->source = (string)($normalizedReview['source'] ?? 'Google');
+        $review->isImported = (bool)($normalizedReview['isImported'] ?? true);
 
         if (!empty($normalizedReview['reviewDate'])) {
             try {
-                $entry->postDate = new DateTime((string)$normalizedReview['reviewDate']);
+                $review->reviewDate = new DateTime((string)$normalizedReview['reviewDate']);
             } catch (Throwable) {
-                $entry->postDate = new DateTime();
+                $review->reviewDate = null;
             }
-        } else {
-            $entry->postDate = new DateTime();
         }
 
-        if (!Craft::$app->getElements()->saveElement($entry)) {
-            $errors = $entry->getErrorSummary(true);
-            throw new RuntimeException('Failed saving review entry: ' . implode('; ', $errors));
+        if (!Craft::$app->getElements()->saveElement($review)) {
+            $errors = $review->getErrorSummary(true);
+            throw new RuntimeException('Failed saving review element: ' . implode('; ', $errors));
         }
     }
 }

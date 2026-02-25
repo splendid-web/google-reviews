@@ -14,7 +14,7 @@ class SyncResult extends Model
     /** @var string[] */
     public array $errors = [];
 
-    public function hasErrors(): bool
+    public function hasSyncErrors(): bool
     {
         return !empty($this->errors);
     }

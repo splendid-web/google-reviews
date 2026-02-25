@@ -2,20 +2,25 @@
 
 namespace splendidweb\googlereviews\variables;
 
-use craft\elements\Entry;
-use craft\elements\db\EntryQuery;
+use splendidweb\googlereviews\elements\GoogleReview;
+use splendidweb\googlereviews\elements\db\GoogleReviewQuery;
 
 class GoogleReviewsVariable
 {
-    public function entries(int $limit = 10, ?int $minimumRating = null): EntryQuery
+    public function entries(int $limit = 10, ?int $minimumRating = null): GoogleReviewQuery
     {
-        $query = Entry::find()
-            ->section('googleReviews')
-            ->limit($limit)
-            ->orderBy(['postDate' => SORT_DESC]);
+        return $this->reviews($limit, $minimumRating);
+    }
 
-        // TODO: Apply rating filter once custom rating field is in place.
-        unset($minimumRating);
+    public function reviews(int $limit = 10, ?int $minimumRating = null): GoogleReviewQuery
+    {
+        $query = GoogleReview::find()
+            ->limit($limit)
+            ->orderBy(['googlereviews_reviews.reviewDate' => SORT_DESC]);
+
+        if ($minimumRating !== null) {
+            $query->rating($minimumRating . '..5');
+        }
 
         return $query;
     }
