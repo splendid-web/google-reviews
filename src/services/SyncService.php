@@ -4,8 +4,11 @@ namespace splendidweb\googlereviews\services;
 
 use Craft;
 use craft\base\Component;
+use craft\elements\Entry;
 use splendidweb\googlereviews\models\SyncResult;
 use splendidweb\googlereviews\Plugin;
+use DateTime;
+use RuntimeException;
 use Throwable;
 
 class SyncService extends Component
@@ -64,8 +67,46 @@ class SyncService extends Component
      */
     private function fetchReviews(): array
     {
-        // TODO: Replace with Google API client call.
-        return [];
+        $settings = Plugin::getInstance()->getSettings();
+        $max = max(1, min(3, $settings->maxReviews));
+
+        $mock = [
+            [
+                'reviewId' => 'mock-1001',
+                'reviewer' => [
+                    'displayName' => 'Alex Morgan',
+                    'profilePhotoUrl' => '',
+                ],
+                'starRating' => 5,
+                'comment' => 'Great service and a super smooth experience.',
+                'createTime' => '2026-02-12T10:30:00+00:00',
+                'reviewLink' => 'https://www.google.com/maps',
+            ],
+            [
+                'reviewId' => 'mock-1002',
+                'reviewer' => [
+                    'displayName' => 'Jordan Lee',
+                    'profilePhotoUrl' => '',
+                ],
+                'starRating' => 4,
+                'comment' => 'Friendly team and quick turnaround.',
+                'createTime' => '2026-02-14T09:00:00+00:00',
+                'reviewLink' => 'https://www.google.com/maps',
+            ],
+            [
+                'reviewId' => 'mock-1003',
+                'reviewer' => [
+                    'displayName' => 'Sam Carter',
+                    'profilePhotoUrl' => '',
+                ],
+                'starRating' => 5,
+                'comment' => 'Highly recommend. Will use again.',
+                'createTime' => '2026-02-18T14:15:00+00:00',
+                'reviewLink' => 'https://www.google.com/maps',
+            ],
+        ];
+
+        return array_slice($mock, 0, $max);
     }
 
     /**
@@ -81,7 +122,7 @@ class SyncService extends Component
             'rating' => (int)($review['starRating'] ?? 0),
             'reviewText' => (string)($review['comment'] ?? ''),
             'reviewDate' => $review['createTime'] ?? null,
-            'reviewUrl' => (string)($review['reviewReply']['reviewLink'] ?? ''),
+            'reviewUrl' => (string)($review['reviewLink'] ?? ''),
             'source' => 'Google',
             'isImported' => true,
         ];
@@ -106,10 +147,61 @@ class SyncService extends Component
      */
     private function upsertReviewEntry(array $normalizedReview): void
     {
-        // TODO: Upsert Craft entry by googleReviewId once section/fields are established.
-        Craft::info(
-            'Prepared review for upsert: ' . ($normalizedReview['googleReviewId'] ?? 'unknown'),
-            __METHOD__
-        );
+        $entriesService = Craft::$app->getEntries();
+        $section = $entriesService->getSectionByHandle('googleReviews');
+
+        if ($section === null) {
+            throw new RuntimeException('Section "googleReviews" is missing. Install/update the plugin migrations first.');
+        }
+
+        $entryType = $entriesService->getEntryTypeByHandle('googleReview');
+        if ($entryType === null) {
+            $sectionEntryTypes = $entriesService->getEntryTypesBySectionId($section->id);
+            $entryType = $sectionEntryTypes[0] ?? null;
+        }
+
+        if ($entryType === null) {
+            throw new RuntimeException('Entry type for section "googleReviews" is missing.');
+        }
+
+        $reviewId = (string)($normalizedReview['googleReviewId'] ?? '');
+        if ($reviewId === '') {
+            throw new RuntimeException('Cannot upsert review without googleReviewId.');
+        }
+
+        $slug = 'google-review-' . strtolower(preg_replace('/[^a-z0-9]+/', '-', $reviewId));
+        $entry = Entry::find()
+            ->section('googleReviews')
+            ->slug($slug)
+            ->status(null)
+            ->site('*')
+            ->one();
+
+        if (!$entry instanceof Entry) {
+            $entry = new Entry();
+            $entry->sectionId = $section->id;
+            $entry->typeId = $entryType->id;
+        }
+
+        $author = (string)($normalizedReview['authorName'] ?? 'Anonymous');
+        $rating = (int)($normalizedReview['rating'] ?? 0);
+        $entry->title = sprintf('%s - %d/5', $author, $rating);
+        $entry->slug = $slug;
+        $entry->enabled = true;
+
+        if (!empty($normalizedReview['reviewDate'])) {
+            try {
+                $entry->postDate = new DateTime((string)$normalizedReview['reviewDate']);
+            } catch (Throwable) {
+                $entry->postDate = new DateTime();
+            }
+        } else {
+            $entry->postDate = new DateTime();
+        }
+
+        if (!Craft::$app->getElements()->saveElement($entry)) {
+            $errors = $entry->getErrorSummary(true);
+            throw new RuntimeException('Failed saving review entry: ' . implode('; ', $errors));
+        }
     }
 }

@@ -61,8 +61,9 @@
     value: settings.attributionText
 }) }}
 
-{{ forms.urlField({
+{{ forms.textField({
     label: "Attribution URL",
+    instructions: "Full URL, e.g. https://www.google.com/maps",
     id: "attributionUrl",
     name: "attributionUrl",
     value: settings.attributionUrl

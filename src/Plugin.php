@@ -16,6 +16,7 @@ class Plugin extends BasePlugin
     public static Plugin $plugin;
 
     public bool $hasCpSettings = true;
+    public string $schemaVersion = '1.0.0';
 
     public function init(): void
     {

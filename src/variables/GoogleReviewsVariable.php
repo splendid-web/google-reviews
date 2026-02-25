@@ -14,9 +14,8 @@ class GoogleReviewsVariable
             ->limit($limit)
             ->orderBy(['postDate' => SORT_DESC]);
 
-        if ($minimumRating !== null) {
-            $query->rating($minimumRating . '..5');
-        }
+        // TODO: Apply rating filter once custom rating field is in place.
+        unset($minimumRating);
 
         return $query;
     }

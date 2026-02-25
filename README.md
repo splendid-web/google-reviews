@@ -57,6 +57,8 @@ Open **Settings -> Plugins -> Google Reviews** and configure:
 php craft google-reviews/sync
 ```
 
+This scaffold currently syncs deterministic mock reviews so you can test end-to-end flow (migration -> sync -> entries -> render) before wiring the real Google API client.
+
 ## Twig Usage (Starter)
 
 ```twig

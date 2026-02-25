@@ -7,7 +7,7 @@
     {% for review in reviews %}
       <article class="google-review-card">
         <header class="google-review-card__header">
-          <strong>{{ review.authorName ?? "Anonymous" }}</strong>
+          <strong>{{ review.authorName ?? review.title ?? "Anonymous" }}</strong>
           <span>{{ review.rating ?? "0" }}/5</span>
         </header>
         {% if review.reviewText ?? null %}
