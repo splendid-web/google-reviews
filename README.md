@@ -11,7 +11,7 @@ Initial scaffold is in place:
 - Sync service and console command skeleton
 - Twig variable and starter rendering partial
 
-Google API ingestion is still stubbed, but plugin-owned custom element persistence is in place.
+Google API ingestion is wired with OAuth refresh-token auth. Mock mode remains available for local testing.
 
 ## Requirements
 
@@ -46,8 +46,10 @@ composer require splendidweb/craft-google-reviews
 Open **Settings -> Plugins -> Google Reviews** and configure:
 
 - Enabled toggle
+- Use Mock Data toggle
 - Google account/location identifiers
-- Credentials path (env-backed)
+- OAuth client ID / secret / refresh token (env-backed)
+- API base URL
 - Max reviews and optional minimum rating
 - Attribution text + URL
 
@@ -57,7 +59,7 @@ Open **Settings -> Plugins -> Google Reviews** and configure:
 php craft google-reviews/sync
 ```
 
-This scaffold currently syncs deterministic mock reviews so you can test end-to-end flow (migration -> sync -> custom elements -> render) before wiring the real Google API client.
+By default, the scaffold can sync deterministic mock reviews for local testing. Disable mock mode in settings to fetch live Google Business Profile reviews.
 
 ## Twig Usage (Starter)
 

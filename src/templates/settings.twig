@@ -7,6 +7,14 @@
     on: settings.enabled
 }) }}
 
+{{ forms.lightswitchField({
+    label: "Use Mock Data",
+    instructions: "Enable for local testing without Google API credentials.",
+    id: "useMockData",
+    name: "useMockData",
+    on: settings.useMockData
+}) }}
+
 {{ forms.autosuggestField({
     label: "Google Account ID",
     instructions: "Business Profile account identifier. Env values supported.",
@@ -26,12 +34,38 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "Credentials Path",
-    instructions: "Path to Google service credential JSON file. Use an env var.",
-    id: "credentialsPath",
-    name: "credentialsPath",
-    value: settings.credentialsPath,
+    label: "OAuth Client ID",
+    instructions: "OAuth client ID used to refresh access tokens. Env values supported.",
+    id: "oauthClientId",
+    name: "oauthClientId",
+    value: settings.oauthClientId,
     suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: "OAuth Client Secret",
+    instructions: "OAuth client secret used to refresh access tokens. Env values supported.",
+    id: "oauthClientSecret",
+    name: "oauthClientSecret",
+    value: settings.oauthClientSecret,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: "OAuth Refresh Token",
+    instructions: "Long-lived refresh token for server-side sync. Env values supported.",
+    id: "oauthRefreshToken",
+    name: "oauthRefreshToken",
+    value: settings.oauthRefreshToken,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.textField({
+    label: "API Base URL",
+    instructions: "Business Profile API base URL.",
+    id: "apiBaseUrl",
+    name: "apiBaseUrl",
+    value: settings.apiBaseUrl
 }) }}
 
 {{ forms.textField({

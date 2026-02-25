@@ -62,16 +62,86 @@ class SyncService extends Component
     }
 
     /**
-     * Stub for the Google Business Profile API integration.
-     *
      * @return array<int, array<string, mixed>>
      */
     private function fetchReviews(): array
     {
         $settings = Plugin::getInstance()->getSettings();
-        $max = max(1, min(3, $settings->maxReviews));
+        $max = max(1, (int)$settings->maxReviews);
 
-        $mock = [
+        if ($settings->useMockData) {
+            return array_slice($this->mockReviews(), 0, min(3, $max));
+        }
+
+        $accountId = trim($settings->getParsedGoogleAccountId());
+        $locationId = trim($settings->getParsedGoogleLocationId());
+        $clientId = trim($settings->getParsedOAuthClientId());
+        $clientSecret = trim($settings->getParsedOAuthClientSecret());
+        $refreshToken = trim($settings->getParsedOAuthRefreshToken());
+
+        if ($accountId === '' || $locationId === '') {
+            throw new RuntimeException('Google account/location IDs are required when mock mode is disabled.');
+        }
+
+        if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
+            throw new RuntimeException('OAuth client ID, client secret, and refresh token are required when mock mode is disabled.');
+        }
+
+        $accessToken = $this->fetchAccessToken($clientId, $clientSecret, $refreshToken);
+
+        $apiBaseUrl = rtrim($settings->getParsedApiBaseUrl(), '/');
+        $accountResource = $this->normalizeResourceName($accountId, 'accounts');
+        $locationResource = $this->normalizeResourceName($locationId, 'locations');
+        $endpoint = sprintf('%s/%s/%s/reviews', $apiBaseUrl, $accountResource, $locationResource);
+
+        $reviews = [];
+        $pageToken = null;
+        $client = Craft::createGuzzleClient();
+
+        do {
+            $query = [
+                'pageSize' => min(50, max(1, $max)),
+            ];
+            if ($pageToken) {
+                $query['pageToken'] = $pageToken;
+            }
+
+            $response = $client->request('GET', $endpoint, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Accept' => 'application/json',
+                ],
+                'query' => $query,
+                'http_errors' => false,
+                'timeout' => 20,
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            $body = json_decode((string)$response->getBody(), true);
+
+            if ($statusCode >= 400) {
+                $error = is_array($body) ? json_encode($body) : (string)$response->getBody();
+                throw new RuntimeException('Google reviews API request failed (' . $statusCode . '): ' . $error);
+            }
+
+            $batch = $body['reviews'] ?? [];
+            if (!is_array($batch)) {
+                $batch = [];
+            }
+
+            $reviews = array_merge($reviews, $batch);
+            $pageToken = $body['nextPageToken'] ?? null;
+        } while ($pageToken && count($reviews) < $max);
+
+        return array_slice($reviews, 0, $max);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function mockReviews(): array
+    {
+        return [
             [
                 'reviewId' => 'mock-1001',
                 'reviewer' => [
@@ -106,8 +176,6 @@ class SyncService extends Component
                 'reviewLink' => 'https://www.google.com/maps',
             ],
         ];
-
-        return array_slice($mock, 0, $max);
     }
 
     /**
@@ -116,17 +184,45 @@ class SyncService extends Component
      */
     private function normalizeReview(array $review): array
     {
+        $reviewId = (string)($review['reviewId'] ?? '');
+        if ($reviewId === '' && !empty($review['name']) && is_string($review['name'])) {
+            $reviewId = (string)preg_replace('/^.*\/reviews\//', '', $review['name']);
+        }
+
         return [
-            'googleReviewId' => (string)($review['reviewId'] ?? ''),
+            'googleReviewId' => $reviewId,
             'authorName' => (string)($review['reviewer']['displayName'] ?? ''),
             'authorPhotoUrl' => (string)($review['reviewer']['profilePhotoUrl'] ?? ''),
-            'rating' => (int)($review['starRating'] ?? 0),
+            'rating' => $this->normalizeStarRating($review['starRating'] ?? 0),
             'reviewText' => (string)($review['comment'] ?? ''),
             'reviewDate' => $review['createTime'] ?? null,
-            'reviewUrl' => (string)($review['reviewLink'] ?? ''),
+            'reviewUrl' => (string)($review['reviewLink'] ?? $review['name'] ?? ''),
             'source' => 'Google',
             'isImported' => true,
         ];
+    }
+
+    private function normalizeStarRating(mixed $value): int
+    {
+        if (is_int($value) || is_float($value) || (is_string($value) && is_numeric($value))) {
+            return max(0, min(5, (int)$value));
+        }
+
+        $map = [
+            'ONE' => 1,
+            'TWO' => 2,
+            'THREE' => 3,
+            'FOUR' => 4,
+            'FIVE' => 5,
+            'ONE_STAR' => 1,
+            'TWO_STARS' => 2,
+            'THREE_STARS' => 3,
+            'FOUR_STARS' => 4,
+            'FIVE_STARS' => 5,
+        ];
+
+        $key = strtoupper((string)$value);
+        return $map[$key] ?? 0;
     }
 
     /**
@@ -188,5 +284,40 @@ class SyncService extends Component
             $errors = $review->getErrorSummary(true);
             throw new RuntimeException('Failed saving review element: ' . implode('; ', $errors));
         }
+    }
+
+    private function fetchAccessToken(string $clientId, string $clientSecret, string $refreshToken): string
+    {
+        $client = Craft::createGuzzleClient();
+        $response = $client->request('POST', 'https://oauth2.googleapis.com/token', [
+            'form_params' => [
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'refresh_token' => $refreshToken,
+                'grant_type' => 'refresh_token',
+            ],
+            'http_errors' => false,
+            'timeout' => 20,
+        ]);
+
+        $statusCode = $response->getStatusCode();
+        $body = json_decode((string)$response->getBody(), true);
+
+        if ($statusCode >= 400 || !is_array($body) || empty($body['access_token'])) {
+            $error = is_array($body) ? json_encode($body) : (string)$response->getBody();
+            throw new RuntimeException('OAuth token refresh failed (' . $statusCode . '): ' . $error);
+        }
+
+        return (string)$body['access_token'];
+    }
+
+    private function normalizeResourceName(string $value, string $prefix): string
+    {
+        $value = trim($value);
+        if (str_contains($value, '/')) {
+            return trim($value, '/');
+        }
+
+        return $prefix . '/' . $value;
     }
 }
