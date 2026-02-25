@@ -73,6 +73,10 @@ class SyncService extends Component
             return array_slice($this->mockReviews(), 0, min(3, $max));
         }
 
+        if ($settings->usePlacesApi) {
+            return $this->fetchPlacesReviews($max);
+        }
+
         $accountId = trim($settings->getParsedGoogleAccountId());
         $locationId = trim($settings->getParsedGoogleLocationId());
         $clientId = trim($settings->getParsedOAuthClientId());
@@ -134,6 +138,77 @@ class SyncService extends Component
         } while ($pageToken && count($reviews) < $max);
 
         return array_slice($reviews, 0, $max);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchPlacesReviews(int $max): array
+    {
+        $settings = Plugin::getInstance()->getSettings();
+        $apiKey = trim($settings->getParsedPlacesApiKey());
+        $placeId = trim($settings->getParsedPlacesPlaceId());
+
+        if ($apiKey === '' || $placeId === '') {
+            throw new RuntimeException('Places API key and Place ID are required when Places mode is enabled.');
+        }
+
+        $placeResource = str_starts_with($placeId, 'places/') ? $placeId : 'places/' . $placeId;
+
+        $client = Craft::createGuzzleClient();
+        $response = $client->request('GET', 'https://places.googleapis.com/v1/' . $placeResource, [
+            'headers' => [
+                'X-Goog-Api-Key' => $apiKey,
+                'X-Goog-FieldMask' => 'id,reviews,googleMapsUri',
+                'Accept' => 'application/json',
+            ],
+            'http_errors' => false,
+            'timeout' => 20,
+        ]);
+
+        $statusCode = $response->getStatusCode();
+        $body = json_decode((string)$response->getBody(), true);
+
+        if ($statusCode >= 400 || !is_array($body)) {
+            $error = is_array($body) ? json_encode($body) : (string)$response->getBody();
+            throw new RuntimeException('Places API (New) request failed (' . $statusCode . '): ' . $error);
+        }
+
+        $reviews = $body['reviews'] ?? [];
+        if (!is_array($reviews)) {
+            $reviews = [];
+        }
+
+        $placeUrl = (string)($body['googleMapsUri'] ?? '');
+        $normalizedRaw = [];
+        foreach ($reviews as $index => $review) {
+            if (!is_array($review)) {
+                continue;
+            }
+
+            $authorAttribution = is_array($review['authorAttribution'] ?? null) ? $review['authorAttribution'] : [];
+            $reviewText = is_array($review['text'] ?? null)
+                ? (string)($review['text']['text'] ?? '')
+                : (string)($review['text'] ?? '');
+            $publishTime = (string)($review['publishTime'] ?? '');
+            $authorUri = (string)($authorAttribution['uri'] ?? '');
+            $authorPhotoUri = (string)($authorAttribution['photoUri'] ?? '');
+
+            $rawId = $authorUri . '|' . $publishTime . '|' . $index;
+            $normalizedRaw[] = [
+                'reviewId' => 'places-' . md5($rawId),
+                'reviewer' => [
+                    'displayName' => (string)($authorAttribution['displayName'] ?? ''),
+                    'profilePhotoUrl' => $authorPhotoUri,
+                ],
+                'starRating' => $review['rating'] ?? 0,
+                'comment' => $reviewText,
+                'createTime' => $publishTime !== '' ? $publishTime : null,
+                'reviewLink' => (string)($authorUri !== '' ? $authorUri : $placeUrl),
+            ];
+        }
+
+        return array_slice($normalizedRaw, 0, $max);
     }
 
     /**

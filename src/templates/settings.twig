@@ -15,6 +15,32 @@
     on: settings.useMockData
 }) }}
 
+{{ forms.lightswitchField({
+    label: "Use Places API (Hybrid Mode)",
+    instructions: "Use Places API key + Place ID instead of Business Profile OAuth flow.",
+    id: "usePlacesApi",
+    name: "usePlacesApi",
+    on: settings.usePlacesApi
+}) }}
+
+{{ forms.autosuggestField({
+    label: "Places API Key",
+    instructions: "Google Maps Places API key (used when Places mode is enabled).",
+    id: "placesApiKey",
+    name: "placesApiKey",
+    value: settings.placesApiKey,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: "Place ID",
+    instructions: "Google Place ID for the business location (used when Places mode is enabled).",
+    id: "placesPlaceId",
+    name: "placesPlaceId",
+    value: settings.placesPlaceId,
+    suggestEnvVars: true
+}) }}
+
 {{ forms.autosuggestField({
     label: "Google Account ID",
     instructions: "Business Profile account identifier. Env values supported.",

@@ -47,6 +47,8 @@ Open **Settings -> Plugins -> Google Reviews** and configure:
 
 - Enabled toggle
 - Use Mock Data toggle
+- Use Places API toggle (hybrid mode)
+- Places API key + Place ID (for quick setup mode)
 - Google account/location identifiers
 - OAuth client ID / secret / refresh token (env-backed)
 - API base URL
@@ -59,7 +61,9 @@ Open **Settings -> Plugins -> Google Reviews** and configure:
 php craft google-reviews/sync
 ```
 
-By default, the scaffold can sync deterministic mock reviews for local testing. Disable mock mode in settings to fetch live Google Business Profile reviews.
+By default, the scaffold can sync deterministic mock reviews for local testing. Disable mock mode to fetch live reviews from either:
+- Places API (hybrid quick setup), or
+- Business Profile API (OAuth flow).
 
 ## Twig Usage (Starter)
 
@@ -71,6 +75,26 @@ By default, the scaffold can sync deterministic mock reviews for local testing. 
   attributionUrl: "https://www.google.com/maps"
 } %}
 ```
+
+## Finding Your Place ID (for Places mode)
+
+Use one of these methods:
+
+1. Place ID Finder tool:
+   - https://developers.google.com/maps/documentation/places/web-service/place-id
+2. Places API (New) Text Search (quick CLI test):
+
+```bash
+curl -X POST "https://places.googleapis.com/v1/places:searchText" \
+  -H "Content-Type: application/json" \
+  -H "X-Goog-Api-Key: YOUR_PLACES_API_KEY" \
+  -H "X-Goog-FieldMask: places.id,places.displayName,places.formattedAddress" \
+  -d '{
+    "textQuery": "YOUR_BUSINESS_NAME YOUR_CITY"
+  }'
+``` 
+
+Then set the returned `places[].id` in plugin settings as **Place ID**.
 
 ## Next Implementation Milestones
 

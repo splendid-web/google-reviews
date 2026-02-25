@@ -9,12 +9,15 @@ class Settings extends Model
 {
     public bool $enabled = true;
     public bool $useMockData = true;
+    public bool $usePlacesApi = false;
     public string $googleAccountId = '';
     public string $googleLocationId = '';
     public string $oauthClientId = '';
     public string $oauthClientSecret = '';
     public string $oauthRefreshToken = '';
     public string $apiBaseUrl = 'https://mybusiness.googleapis.com/v4';
+    public string $placesApiKey = '';
+    public string $placesPlaceId = '';
     public int $maxReviews = 50;
     public ?int $minimumRating = null;
     public string $attributionText = 'Reviews from Google';
@@ -23,8 +26,8 @@ class Settings extends Model
     public function rules(): array
     {
         return [
-            [['enabled', 'useMockData'], 'boolean'],
-            [['googleAccountId', 'googleLocationId', 'oauthClientId', 'oauthClientSecret', 'oauthRefreshToken', 'apiBaseUrl', 'attributionText', 'attributionUrl'], 'string'],
+            [['enabled', 'useMockData', 'usePlacesApi'], 'boolean'],
+            [['googleAccountId', 'googleLocationId', 'oauthClientId', 'oauthClientSecret', 'oauthRefreshToken', 'apiBaseUrl', 'placesApiKey', 'placesPlaceId', 'attributionText', 'attributionUrl'], 'string'],
             [['maxReviews'], 'integer', 'min' => 1, 'max' => 500],
             [['minimumRating'], 'integer', 'min' => 1, 'max' => 5],
             [['apiBaseUrl'], 'url'],
@@ -60,5 +63,15 @@ class Settings extends Model
     public function getParsedApiBaseUrl(): string
     {
         return App::parseEnv($this->apiBaseUrl);
+    }
+
+    public function getParsedPlacesApiKey(): string
+    {
+        return App::parseEnv($this->placesApiKey);
+    }
+
+    public function getParsedPlacesPlaceId(): string
+    {
+        return App::parseEnv($this->placesPlaceId);
     }
 }
