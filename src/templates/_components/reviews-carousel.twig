@@ -1,0 +1,26 @@
+{% set reviews = reviews ?? [] %}
+{% set attributionText = attributionText ?? "Reviews from Google" %}
+{% set attributionUrl = attributionUrl ?? "https://www.google.com/maps" %}
+
+{% if reviews|length %}
+  <div class="google-reviews-carousel" data-google-reviews-carousel>
+    {% for review in reviews %}
+      <article class="google-review-card">
+        <header class="google-review-card__header">
+          <strong>{{ review.authorName ?? "Anonymous" }}</strong>
+          <span>{{ review.rating ?? "0" }}/5</span>
+        </header>
+        {% if review.reviewText ?? null %}
+          <p>{{ review.reviewText }}</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+  <p class="google-reviews-attribution">
+    <a href="{{ attributionUrl }}" rel="nofollow noopener" target="_blank">
+      {{ attributionText }}
+    </a>
+  </p>
+{% else %}
+  <p class="google-reviews-empty">No reviews available.</p>
+{% endif %}

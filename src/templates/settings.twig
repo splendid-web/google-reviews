@@ -1,0 +1,69 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.lightswitchField({
+    label: "Enable Sync",
+    id: "enabled",
+    name: "enabled",
+    on: settings.enabled
+}) }}
+
+{{ forms.autosuggestField({
+    label: "Google Account ID",
+    instructions: "Business Profile account identifier. Env values supported.",
+    id: "googleAccountId",
+    name: "googleAccountId",
+    value: settings.googleAccountId,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: "Google Location ID",
+    instructions: "Business Profile location identifier. Env values supported.",
+    id: "googleLocationId",
+    name: "googleLocationId",
+    value: settings.googleLocationId,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: "Credentials Path",
+    instructions: "Path to Google service credential JSON file. Use an env var.",
+    id: "credentialsPath",
+    name: "credentialsPath",
+    value: settings.credentialsPath,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.textField({
+    label: "Max Reviews",
+    id: "maxReviews",
+    name: "maxReviews",
+    type: "number",
+    min: 1,
+    max: 500,
+    value: settings.maxReviews
+}) }}
+
+{{ forms.textField({
+    label: "Minimum Rating (optional)",
+    id: "minimumRating",
+    name: "minimumRating",
+    type: "number",
+    min: 1,
+    max: 5,
+    value: settings.minimumRating
+}) }}
+
+{{ forms.textField({
+    label: "Attribution Text",
+    id: "attributionText",
+    name: "attributionText",
+    value: settings.attributionText
+}) }}
+
+{{ forms.urlField({
+    label: "Attribution URL",
+    id: "attributionUrl",
+    name: "attributionUrl",
+    value: settings.attributionUrl
+}) }}
