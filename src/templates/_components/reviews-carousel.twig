@@ -13,6 +13,12 @@
         {% if review.reviewText ?? null %}
           <p>{{ review.reviewText }}</p>
         {% endif %}
+        {% if review.replyText ?? null %}
+          <div class="google-review-card__reply">
+            <strong>Business reply:</strong>
+            <p>{{ review.replyText }}</p>
+          </div>
+        {% endif %}
       </article>
     {% endfor %}
   </div>

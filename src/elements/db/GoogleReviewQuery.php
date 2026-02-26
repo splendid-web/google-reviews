@@ -46,6 +46,8 @@ class GoogleReviewQuery extends ElementQuery
             'googlereviews_reviews.rating',
             'googlereviews_reviews.reviewText',
             'googlereviews_reviews.reviewDate',
+            'googlereviews_reviews.replyText',
+            'googlereviews_reviews.replyUpdatedAt',
             'googlereviews_reviews.reviewUrl',
             'googlereviews_reviews.source',
             'googlereviews_reviews.isImported',

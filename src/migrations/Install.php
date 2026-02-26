@@ -23,6 +23,8 @@ class Install extends Migration
             'rating' => $this->smallInteger()->notNull()->defaultValue(0),
             'reviewText' => $this->text(),
             'reviewDate' => $this->dateTime(),
+            'replyText' => $this->text(),
+            'replyUpdatedAt' => $this->dateTime(),
             'reviewUrl' => $this->string(1024)->notNull()->defaultValue(''),
             'source' => $this->string(50)->notNull()->defaultValue('Google'),
             'isImported' => $this->boolean()->notNull()->defaultValue(true),

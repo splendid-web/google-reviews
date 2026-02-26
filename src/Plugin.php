@@ -22,7 +22,7 @@ class Plugin extends BasePlugin
 
     public bool $hasCpSettings = true;
     public bool $hasCpSection = true;
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.1';
 
     public function init(): void
     {

@@ -16,6 +16,8 @@ class GoogleReview extends Element
     public int $rating = 0;
     public string $reviewText = '';
     public ?DateTime $reviewDate = null;
+    public string $replyText = '';
+    public ?DateTime $replyUpdatedAt = null;
     public string $reviewUrl = '';
     public string $source = 'Google';
     public bool $isImported = true;
@@ -69,6 +71,8 @@ class GoogleReview extends Element
                 'rating' => $this->rating,
                 'reviewText' => $this->reviewText,
                 'reviewDate' => Db::prepareDateForDb($this->reviewDate),
+                'replyText' => $this->replyText,
+                'replyUpdatedAt' => Db::prepareDateForDb($this->replyUpdatedAt),
                 'reviewUrl' => $this->reviewUrl,
                 'source' => $this->source,
                 'isImported' => $this->isImported,
@@ -90,6 +94,7 @@ class GoogleReview extends Element
             'googleReviewId',
             'authorName',
             'reviewText',
+            'replyText',
             'source',
         ];
     }
@@ -112,6 +117,7 @@ class GoogleReview extends Element
             'authorName' => Craft::t('google-reviews', 'Author'),
             'rating' => Craft::t('google-reviews', 'Rating'),
             'reviewText' => Craft::t('google-reviews', 'Comment'),
+            'replyText' => Craft::t('google-reviews', 'Reply'),
             'reviewDate' => Craft::t('google-reviews', 'Review Date'),
             'dateUpdated' => Craft::t('app', 'Date Updated'),
         ];
@@ -119,7 +125,7 @@ class GoogleReview extends Element
 
     protected static function defineDefaultTableAttributes(string $source): array
     {
-        return ['authorName', 'rating', 'reviewText', 'reviewDate', 'dateUpdated'];
+        return ['authorName', 'rating', 'reviewText', 'replyText', 'reviewDate', 'dateUpdated'];
     }
 
     protected static function defineSortOptions(): array
@@ -138,6 +144,7 @@ class GoogleReview extends Element
             'authorName' => Craft::$app->getFormatter()->asText($this->authorName),
             'rating' => Craft::$app->getFormatter()->asText((string)$this->rating),
             'reviewText' => Craft::$app->getFormatter()->asText(mb_strimwidth($this->reviewText, 0, 140, '...')),
+            'replyText' => Craft::$app->getFormatter()->asText(mb_strimwidth($this->replyText, 0, 140, '...')),
             'reviewDate' => $this->reviewDate ? Craft::$app->getFormatter()->asDate($this->reviewDate) : '',
             'source' => Craft::$app->getFormatter()->asText($this->source),
             default => parent::tableAttributeHtml($attribute),

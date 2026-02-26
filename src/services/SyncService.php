@@ -205,6 +205,7 @@ class SyncService extends Component
                 'comment' => $reviewText,
                 'createTime' => $publishTime !== '' ? $publishTime : null,
                 'reviewLink' => (string)($authorUri !== '' ? $authorUri : $placeUrl),
+                'reviewReply' => null,
             ];
         }
 
@@ -271,6 +272,8 @@ class SyncService extends Component
             'rating' => $this->normalizeStarRating($review['starRating'] ?? 0),
             'reviewText' => (string)($review['comment'] ?? ''),
             'reviewDate' => $review['createTime'] ?? null,
+            'replyText' => (string)($review['reviewReply']['comment'] ?? ''),
+            'replyUpdatedAt' => $review['reviewReply']['updateTime'] ?? null,
             'reviewUrl' => (string)($review['reviewLink'] ?? $review['name'] ?? ''),
             'source' => 'Google',
             'isImported' => true,
@@ -343,6 +346,7 @@ class SyncService extends Component
         $review->authorPhotoUrl = (string)($normalizedReview['authorPhotoUrl'] ?? '');
         $review->rating = $rating;
         $review->reviewText = (string)($normalizedReview['reviewText'] ?? '');
+        $review->replyText = (string)($normalizedReview['replyText'] ?? '');
         $review->reviewUrl = (string)($normalizedReview['reviewUrl'] ?? '');
         $review->source = (string)($normalizedReview['source'] ?? 'Google');
         $review->isImported = (bool)($normalizedReview['isImported'] ?? true);
@@ -353,6 +357,16 @@ class SyncService extends Component
             } catch (Throwable) {
                 $review->reviewDate = null;
             }
+        }
+
+        if (!empty($normalizedReview['replyUpdatedAt'])) {
+            try {
+                $review->replyUpdatedAt = new DateTime((string)$normalizedReview['replyUpdatedAt']);
+            } catch (Throwable) {
+                $review->replyUpdatedAt = null;
+            }
+        } else {
+            $review->replyUpdatedAt = null;
         }
 
         if (!Craft::$app->getElements()->saveElement($review)) {
