@@ -156,7 +156,7 @@ Use `places[].id` from the response as your plugin `Place ID`.
 
 - Places API (New) returns a maximum of 5 reviews per place in the place details response.
 - If you need more than 5 reviews and owner replies, use Business Profile mode.
-- Owner replies are generally available via Business Profile mode, not Places mode.
+- Owner replies are only available via Business Profile mode, not Places mode.
 - Keep credentials in environment variables where possible.
 
 ## Support
