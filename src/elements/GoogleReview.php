@@ -5,6 +5,7 @@ namespace splendidweb\googlereviews\elements;
 use Craft;
 use craft\base\Element;
 use craft\helpers\Db;
+use craft\helpers\Html;
 use DateTime;
 use splendidweb\googlereviews\elements\db\GoogleReviewQuery;
 
@@ -51,6 +52,11 @@ class GoogleReview extends Element
     public static function isLocalized(): bool
     {
         return false;
+    }
+
+    public function getAuthorPhoto(): string
+    {
+        return $this->authorPhotoUrl;
     }
 
     public function rules(): array
@@ -115,6 +121,7 @@ class GoogleReview extends Element
     {
         return [
             'authorName' => Craft::t('google-reviews', 'Author'),
+            'authorPhoto' => Craft::t('google-reviews', 'Photo'),
             'rating' => Craft::t('google-reviews', 'Rating'),
             'reviewText' => Craft::t('google-reviews', 'Comment'),
             'replyText' => Craft::t('google-reviews', 'Reply'),
@@ -125,7 +132,7 @@ class GoogleReview extends Element
 
     protected static function defineDefaultTableAttributes(string $source): array
     {
-        return ['authorName', 'rating', 'reviewText', 'replyText', 'reviewDate', 'dateUpdated'];
+        return ['authorName', 'authorPhoto', 'rating', 'reviewText', 'replyText', 'reviewDate', 'dateUpdated'];
     }
 
     protected static function defineSortOptions(): array
@@ -142,6 +149,15 @@ class GoogleReview extends Element
     {
         return match ($attribute) {
             'authorName' => Craft::$app->getFormatter()->asText($this->authorName),
+            'authorPhoto' => $this->authorPhotoUrl !== ''
+                ? Html::img($this->authorPhotoUrl, [
+                    'alt' => $this->authorName !== '' ? $this->authorName . ' profile photo' : 'Author profile photo',
+                    'loading' => 'lazy',
+                    'width' => 28,
+                    'height' => 28,
+                    'style' => 'border-radius: 50%; object-fit: cover;',
+                ])
+                : '—',
             'rating' => Craft::$app->getFormatter()->asText((string)$this->rating),
             'reviewText' => Craft::$app->getFormatter()->asText(mb_strimwidth($this->reviewText, 0, 140, '...')),
             'replyText' => Craft::$app->getFormatter()->asText(mb_strimwidth($this->replyText, 0, 140, '...')),

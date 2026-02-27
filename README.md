@@ -1,115 +1,75 @@
-# Google Reviews (Craft CMS 5 Plugin)
+# Google Reviews for Craft CMS 5
 
-Craft CMS 5 plugin scaffold for syncing Google Business Profile reviews into Craft and rendering from stored data.
+Sync and display Google reviews in Craft from server-side stored data.
 
-## Status
+This plugin supports two data sources:
 
-Initial scaffold is in place:
+- **Google Places API (quick setup):** easiest way to show reviews with minimal onboarding.
+- **Google Business Profile API (advanced):** OAuth-based setup for deeper account-backed data and owner replies.
 
-- Plugin package metadata and bootstrap
-- CP settings model + settings template
-- Sync service and console command skeleton
-- Twig variable and starter rendering partial
+## Features
 
-Google API ingestion is wired with OAuth refresh-token auth. Mock mode remains available for local testing.
+- Sync Google reviews into a custom Craft element type (`GoogleReview`)
+- Control Panel index view for imported reviews
+- Frontend Twig query API (`craft.googleReviews.reviews()`)
+- Starter carousel template (`google-reviews/_components/reviews-carousel`)
+- Optional owner reply support in Business Profile mode
+- Author photo support in frontend and CP table
+- Mock mode for local/testing workflows
 
 ## Requirements
 
 - Craft CMS `^5.3.0`
-- PHP compatible with your Craft 5 project
+- PHP version compatible with your Craft 5 install
 
-## Install (Local Development via Path Repository)
+## Installation
 
-In your consuming Craft project `composer.json`, add:
-
-```json
-{
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "repositories": [
-    {
-      "type": "path",
-      "url": "/Users/Rob/Sites/google-reviews"
-    }
-  ]
-}
-```
-
-Then require the package:
+Install from the Craft Plugin Store, or via Composer:
 
 ```bash
 composer require splendidweb/craft-google-reviews
 ```
 
-## Plugin Settings
+Then install from **Control Panel -> Settings -> Plugins**.
 
-Open **Settings -> Plugins -> Google Reviews** and configure:
+## Quick Start (Places API)
 
-- Enabled toggle
-- Use Mock Data toggle
-- Use Places API toggle (hybrid mode)
-- Places API key + Place ID (for quick setup mode)
-- Google account/location identifiers
-- OAuth client ID / secret / refresh token (env-backed)
-- API base URL
-- Max reviews and optional minimum rating
-- Attribution text + URL
+If you want the fastest setup, use Places mode.
 
-## Console Command
-
-```bash
-php craft google-reviews/sync
-```
-
-By default, the scaffold can sync deterministic mock reviews for local testing. Disable mock mode to fetch live reviews from either:
-- Places API (hybrid quick setup), or
-- Business Profile API (OAuth flow).
-
-## Google Authentication Setup
-
-Choose one live mode:
-
-### Option A: Places API (Quick Setup)
-
-Best when you want the simplest onboarding for read-only review display.
-
-1. In Google Cloud Console, enable **Places API**.
+1. Enable **Places API** in Google Cloud Console.
 2. Create an API key in **APIs & Services -> Credentials**.
-3. Restrict the key for server-side use:
-   - Application restrictions: **IP addresses** (recommended) or unrestricted for temporary local testing.
-   - API restrictions: **Places API** only.
-4. Find a `Place ID` (see section below).
+3. Restrict the key for server use:
+   - Application restriction: **IP addresses** (recommended)
+   - API restriction: **Places API**
+4. Find your Place ID (see [Finding Your Place ID](#finding-your-place-id)).
 5. In plugin settings:
+   - `Enabled` = on
    - `Use Mock Data` = off
    - `Use Places API` = on
    - set `Places API Key`
    - set `Place ID`
-6. Run sync:
+6. Run a sync:
 
 ```bash
 php craft google-reviews/sync
 ```
 
-Note: Places responses are typically a limited subset of reviews, not full review history.
-Owner reply text is generally not available from Places responses.
+## Business Profile Setup (Advanced OAuth)
 
-### Option B: Business Profile API (Advanced OAuth)
-
-Best when you need owner-account API access and fuller review management options.
+Use this mode if you need owner-level API access and review replies.
 
 1. In Google Cloud Console:
    - Enable Business Profile APIs
    - Configure OAuth consent screen
    - Create OAuth Client ID + Client Secret
-2. If your app is in testing, add your Google account as a **Test user**.
-3. Generate tokens (for example with OAuth Playground):
+2. Add your Google account as a **Test user** while app is in testing.
+3. Generate a refresh token (for example via OAuth Playground):
    - scope: `https://www.googleapis.com/auth/business.manage`
-   - exchange auth code for tokens
-   - save the `refresh_token`
-4. Get account/location IDs:
+4. Fetch your account and location IDs:
    - `GET https://mybusinessaccountmanagement.googleapis.com/v1/accounts`
    - `GET https://mybusinessbusinessinformation.googleapis.com/v1/accounts/{accountId}/locations`
 5. In plugin settings:
+   - `Enabled` = on
    - `Use Mock Data` = off
    - `Use Places API` = off
    - set `Google Account ID`
@@ -117,15 +77,15 @@ Best when you need owner-account API access and fuller review management options
    - set `OAuth Client ID`
    - set `OAuth Client Secret`
    - set `OAuth Refresh Token`
-6. Run sync:
+6. Run a sync:
 
 ```bash
 php craft google-reviews/sync
 ```
 
-Business Profile mode also maps owner reply text (`reviewReply`) when available.
+The plugin uses your refresh token to automatically request new access tokens on each sync.
 
-## Twig Usage (Starter)
+## Frontend Usage
 
 ```twig
 {% set reviews = craft.googleReviews.reviews(12).all() %}
@@ -136,13 +96,23 @@ Business Profile mode also maps owner reply text (`reviewReply`) when available.
 } %}
 ```
 
-## Finding Your Place ID (for Places mode)
+## Console Command
 
-Use one of these methods:
+Run a manual sync at any time:
 
-1. Place ID Finder tool:
+```bash
+php craft google-reviews/sync
+```
+
+For production, schedule this command via cron at your preferred interval.
+
+## Finding Your Place ID
+
+You can use either method:
+
+1. Google Place ID Finder:
    - https://developers.google.com/maps/documentation/places/web-service/place-id
-2. Places API (New) Text Search (quick CLI test):
+2. Places API Text Search:
 
 ```bash
 curl -X POST "https://places.googleapis.com/v1/places:searchText" \
@@ -152,14 +122,21 @@ curl -X POST "https://places.googleapis.com/v1/places:searchText" \
   -d '{
     "textQuery": "YOUR_BUSINESS_NAME YOUR_CITY"
   }'
-``` 
+```
 
-Then set the returned `places[].id` in plugin settings as **Place ID**.
+Use `places[].id` from the response as your plugin `Place ID`.
 
-## Next Implementation Milestones
+## Notes and Limits
 
-1. Add optional UI helper for Place ID lookup/testing.
-2. Add retry/backoff handling for Google API rate-limit errors.
-3. Add archiving strategy for removed reviews.
-4. Add test coverage for normalization and sync behavior.
-5. Add docs for production API key restrictions and rotation.
+- Places API (New) returns a maximum of 5 reviews per place in the place details response.
+- If you need more than 5 reviews and owner replies, use Business Profile mode.
+- Owner replies are generally available via Business Profile mode, not Places mode.
+- Keep credentials in environment variables where possible.
+
+## Support
+
+If you run into setup issues, include:
+
+- your selected mode (Places or Business Profile)
+- the sync command output
+- any relevant Google API error response

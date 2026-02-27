@@ -26,6 +26,10 @@ class SyncService extends Component
         }
 
         try {
+            if (!$settings->useMockData) {
+                $result->archived += $this->removeMockReviews();
+            }
+
             $rawReviews = $this->fetchReviews();
             $result->fetched = count($rawReviews);
 
@@ -59,6 +63,27 @@ class SyncService extends Component
         );
 
         return $result;
+    }
+
+    private function removeMockReviews(): int
+    {
+        $mockReviews = GoogleReview::find()
+            ->googleReviewId('mock-*')
+            ->status(null)
+            ->all();
+
+        $removed = 0;
+        foreach ($mockReviews as $mockReview) {
+            if (!$mockReview instanceof GoogleReview) {
+                continue;
+            }
+
+            if (Craft::$app->getElements()->deleteElement($mockReview)) {
+                $removed++;
+            }
+        }
+
+        return $removed;
     }
 
     /**
