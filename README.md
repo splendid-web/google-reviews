@@ -7,6 +7,15 @@ This plugin supports two data sources:
 - **Google Places API (quick setup):** easiest way to show reviews with minimal onboarding.
 - **Google Business Profile API (advanced):** OAuth-based setup for deeper account-backed data and owner replies.
 
+## Why Server-Side Storage
+
+Reviews are fetched on a schedule and stored in Craft, instead of being requested from Google on every page load. This helps:
+
+- Minimize Google API calls and reduce quota usage
+- Improve frontend performance and reliability
+- Avoid exposing API credentials in frontend code
+- Keep review output stable even if an API request is temporarily unavailable
+
 ## Features
 
 - Sync Google reviews into a custom Craft element type (`GoogleReview`)
@@ -105,6 +114,23 @@ php craft google-reviews/sync
 ```
 
 For production, schedule this command via cron at your preferred interval.
+
+## Automated Sync (Cron)
+
+Use your server cron to keep reviews up to date automatically.
+
+Example (once per day at 02:00 server time):
+
+```bash
+0 2 * * * /usr/bin/php /path/to/project/craft google-reviews/sync >> /path/to/project/storage/logs/google-reviews-sync.log 2>&1
+```
+
+Recommended:
+
+- Start with every 6-12 hours for most sites.
+- Use absolute paths for both PHP and your Craft project.
+- Log output so failed runs can be diagnosed quickly.
+- Run cron on the production host where Craft is installed.
 
 ## Finding Your Place ID
 
