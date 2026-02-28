@@ -21,9 +21,9 @@ Reviews are fetched on a schedule and stored in Craft, instead of being requeste
 - Sync Google reviews into Craft
 - Control Panel index view for imported reviews
 - Frontend Twig query API (`craft.googleReviews.reviews()`)
-- Starter carousel template (`google-reviews/_components/reviews-example`)
+- Starter template (`google-reviews/_components/reviews-example`)
 - Optional owner reply support in Business Profile mode (beta)
-- Author photo support in frontend and CP table
+- Author photo support
 - Mock mode for local/testing workflows
 
 ## Requirements
