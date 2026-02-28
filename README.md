@@ -53,8 +53,7 @@ If you want the fastest setup, use Places mode.
 4. Find your Place ID (see [Finding Your Place ID](#finding-your-place-id)).
 5. In plugin settings:
    - `Enable Sync` = on
-   - `Use Mock Data` = off
-   - `Use Places API` = on
+   - `Review Source Mode` = `Places API`
    - set `Places API Key`
    - set `Place ID`
 6. Run a sync:
@@ -80,8 +79,7 @@ Availability depends on Google approving API access for your project.
    - `GET https://mybusinessbusinessinformation.googleapis.com/v1/accounts/{accountId}/locations`
 5. In plugin settings:
    - `Enable Sync` = on
-   - `Use Mock Data` = off
-   - `Use Places API` = off
+   - `Review Source Mode` = `Business Profile API`
    - set `Google Account ID`
    - set `Google Location ID`
    - set `OAuth Client ID`

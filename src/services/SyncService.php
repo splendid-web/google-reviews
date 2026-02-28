@@ -28,7 +28,7 @@ class SyncService extends Component
         }
 
         try {
-            if (!$settings->useMockData) {
+            if (!$settings->isMockMode()) {
                 $result->archived += $this->removeMockReviews();
             }
 
@@ -96,11 +96,11 @@ class SyncService extends Component
         $settings = Plugin::getInstance()->getSettings();
         $max = max(1, (int)$settings->maxReviews);
 
-        if ($settings->useMockData) {
+        if ($settings->isMockMode()) {
             return array_slice($this->mockReviews(), 0, min(3, $max));
         }
 
-        if ($settings->usePlacesApi) {
+        if ($settings->isPlacesMode()) {
             return $this->fetchPlacesReviews($max);
         }
 
@@ -111,11 +111,11 @@ class SyncService extends Component
         $refreshToken = trim($settings->getParsedOAuthRefreshToken());
 
         if ($accountId === '' || $locationId === '') {
-            throw new RuntimeException('Google account/location IDs are required when mock mode is disabled.');
+            throw new RuntimeException('Google account/location IDs are required when Business Profile mode is selected.');
         }
 
         if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
-            throw new RuntimeException('OAuth client ID, client secret, and refresh token are required when mock mode is disabled.');
+            throw new RuntimeException('OAuth client ID, client secret, and refresh token are required when Business Profile mode is selected.');
         }
 
         $accessToken = $this->fetchAccessToken($clientId, $clientSecret, $refreshToken);

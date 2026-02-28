@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Replaced mode lightswitches with a single `Review Source Mode` dropdown (`Mock Data`, `Places API`, `Business Profile API`) and made Mock the default.
+
 ## 1.0.2 - 2026-02-25
 
 - Enabled deletion actions for `GoogleReview` elements in the Control Panel index.

@@ -8,20 +8,17 @@
     on: settings.enabled
 }) }}
 
-{{ forms.lightswitchField({
-    label: "Use Mock Data",
-    instructions: "Enable for local testing without Google API credentials.",
-    id: "useMockData",
-    name: "useMockData",
-    on: settings.useMockData
-}) }}
-
-{{ forms.lightswitchField({
-    label: "Use Places API (Hybrid Mode)",
-    instructions: "Use Places API key + Place ID instead of Business Profile OAuth flow.",
-    id: "usePlacesApi",
-    name: "usePlacesApi",
-    on: settings.usePlacesApi
+{{ forms.selectField({
+    label: "Review Source Mode",
+    instructions: "Choose where reviews are synced from. Mock mode is best for local testing.",
+    id: "syncSourceMode",
+    name: "syncSourceMode",
+    value: settings.syncSourceMode,
+    options: [
+        { label: "Mock Data", value: "mock" },
+        { label: "Places API", value: "places" },
+        { label: "Business Profile API", value: "businessProfile" }
+    ]
 }) }}
 
 {{ forms.autosuggestField({
