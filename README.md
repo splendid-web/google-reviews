@@ -99,9 +99,67 @@ See example template in `/templates/_components/reviews-example.twig`.
 
 ```twig
 {% set reviews = craft.googleReviews.reviews(12).all() %}
-{% include "google-reviews/_components/reviews-example" with {
-  reviews: reviews
-} %}
+{% if reviews|length %}
+  <div class="google-reviews-carousel" data-google-reviews-carousel>
+    {% for review in reviews %}
+      <article class="google-review-card">
+        <header class="google-review-card__header">
+          {% set authorName = review.authorName ?? review.title ?? "Anonymous" %}
+          {% if review.authorPhotoUrl ?? null %}
+            <img
+              class="google-review-card__avatar"
+              src="{{ review.authorPhotoUrl }}"
+              alt="{{ authorName }} profile photo"
+              loading="lazy"
+              width="40"
+              height="40"
+            >
+          {% else %}
+            <span class="google-review-card__avatar-fallback" aria-hidden="true">
+              {{ authorName|slice(0, 1)|upper }}
+            </span>
+          {% endif %}
+          <strong>
+            {% if review.reviewUrl ?? null %}
+              <a href="{{ review.reviewUrl }}" rel="nofollow noopener" target="_blank">{{ authorName }}</a>
+            {% else %}
+              {{ authorName }}
+            {% endif %}
+          </strong>
+          {% if review.reviewDate ?? null %}
+            {% set daysAgo = ((now|date('U') - (review.reviewDate|date('U'))) / 86400)|round(0, 'floor') %}
+            {% set daysAgo = daysAgo < 0 ? 0 : daysAgo %}
+            <p class="google-review-card__date">
+              {% if daysAgo < 1 %}
+                Today
+              {% elseif daysAgo < 7 %}
+                {{ daysAgo }} day{{ daysAgo == 1 ? '' : 's' }} ago
+              {% else %}
+                {% set weeksAgo = (daysAgo / 7)|round(0, 'floor') %}
+                {{ weeksAgo }} week{{ weeksAgo == 1 ? '' : 's' }} ago
+              {% endif %}
+            </p>
+          {% endif %}
+          {% set rating = (review.rating ?? 0)|round(0, 'floor') %}
+          <div class="google-review-card__rating" aria-label="{{ rating }} out of 5 stars">
+            {% for i in 1..5 %}{{ i <= rating ? '★' : '☆' }}{% endfor %}
+          </div>
+        </header>
+        {% if review.reviewText ?? null %}
+          <p class="google-review-card__text">{{ review.reviewText|truncate(150) }}</p>
+        {% endif %}
+        {% if review.replyText ?? null %}
+          <div class="google-review-card__reply">
+            <strong>Business reply:</strong>
+            <p>{{ review.replyText }}</p>
+          </div>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="google-reviews-empty">No reviews available.</p>
+{% endif %}
 ```
 
 ## Console Command
