@@ -6,6 +6,12 @@ All notable changes to this project are documented in this file.
 
 - No changes yet.
 
+## 1.0.1 - 2026-02-25
+
+- Removed plugin-level `Attribution Text` and `Attribution URL` settings.
+- Removed plugin-level `API Base URL` setting and now use a fixed Business Profile API endpoint internally.
+- Removed attribution output from the bundled reviews component so attribution is fully frontend-managed.
+
 ## 1.0.0 - 2026-02-25
 
 - Initial public release of the Google Reviews plugin for Craft CMS 5.

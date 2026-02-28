@@ -88,14 +88,6 @@
 }) }}
 
 {{ forms.textField({
-    label: "API Base URL",
-    instructions: "Business Profile API base URL.",
-    id: "apiBaseUrl",
-    name: "apiBaseUrl",
-    value: settings.apiBaseUrl
-}) }}
-
-{{ forms.textField({
     label: "Max Reviews",
     id: "maxReviews",
     name: "maxReviews",
@@ -115,17 +107,3 @@
     value: settings.minimumRating
 }) }}
 
-{{ forms.textField({
-    label: "Attribution Text",
-    id: "attributionText",
-    name: "attributionText",
-    value: settings.attributionText
-}) }}
-
-{{ forms.textField({
-    label: "Attribution URL",
-    instructions: "Full URL, e.g. https://www.google.com/maps",
-    id: "attributionUrl",
-    name: "attributionUrl",
-    value: settings.attributionUrl
-}) }}

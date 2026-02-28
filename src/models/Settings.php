@@ -15,23 +15,18 @@ class Settings extends Model
     public string $oauthClientId = '';
     public string $oauthClientSecret = '';
     public string $oauthRefreshToken = '';
-    public string $apiBaseUrl = 'https://mybusiness.googleapis.com/v4';
     public string $placesApiKey = '';
     public string $placesPlaceId = '';
     public int $maxReviews = 50;
     public ?int $minimumRating = null;
-    public string $attributionText = 'Reviews from Google';
-    public string $attributionUrl = 'https://www.google.com/maps';
 
     public function rules(): array
     {
         return [
             [['enabled', 'useMockData', 'usePlacesApi'], 'boolean'],
-            [['googleAccountId', 'googleLocationId', 'oauthClientId', 'oauthClientSecret', 'oauthRefreshToken', 'apiBaseUrl', 'placesApiKey', 'placesPlaceId', 'attributionText', 'attributionUrl'], 'string'],
+            [['googleAccountId', 'googleLocationId', 'oauthClientId', 'oauthClientSecret', 'oauthRefreshToken', 'placesApiKey', 'placesPlaceId'], 'string'],
             [['maxReviews'], 'integer', 'min' => 1, 'max' => 500],
             [['minimumRating'], 'integer', 'min' => 1, 'max' => 5],
-            [['apiBaseUrl'], 'url'],
-            [['attributionUrl'], 'url'],
         ];
     }
 
@@ -58,11 +53,6 @@ class Settings extends Model
     public function getParsedGoogleLocationId(): string
     {
         return App::parseEnv($this->googleLocationId);
-    }
-
-    public function getParsedApiBaseUrl(): string
-    {
-        return App::parseEnv($this->apiBaseUrl);
     }
 
     public function getParsedPlacesApiKey(): string

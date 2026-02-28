@@ -14,6 +14,8 @@ use Throwable;
 
 class SyncService extends Component
 {
+    private const GBP_API_BASE_URL = 'https://mybusiness.googleapis.com/v4';
+
     public function sync(): SyncResult
     {
         $result = new SyncResult();
@@ -118,10 +120,9 @@ class SyncService extends Component
 
         $accessToken = $this->fetchAccessToken($clientId, $clientSecret, $refreshToken);
 
-        $apiBaseUrl = rtrim($settings->getParsedApiBaseUrl(), '/');
         $accountResource = $this->normalizeResourceName($accountId, 'accounts');
         $locationResource = $this->normalizeResourceName($locationId, 'locations');
-        $endpoint = sprintf('%s/%s/%s/reviews', $apiBaseUrl, $accountResource, $locationResource);
+        $endpoint = sprintf('%s/%s/%s/reviews', self::GBP_API_BASE_URL, $accountResource, $locationResource);
 
         $reviews = [];
         $pageToken = null;
