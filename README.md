@@ -33,13 +33,13 @@ Reviews are fetched on a schedule and stored in Craft, instead of being requeste
 
 ## Installation
 
-Install from the Craft Plugin Store, or via Composer:
+Install from the Craft Plugin Store or via Composer:
 
 ```bash
 composer require splendidweb/craft-google-reviews
 ```
 
-Then install from **Control Panel -> Settings -> Plugins**.
+Then install from **Control Panel > Settings > Plugins**.
 
 ## Quick Start (Places API)
 
@@ -108,13 +108,13 @@ See example template in `/templates/_components/reviews-example.twig`.
 
 ## Console Command
 
-Run a manual sync at any time:
+Run a manual sync at any time (from your Craft project root):
 
 ```bash
 php craft google-reviews/sync
 ```
 
-For production, schedule this command via cron at your preferred interval.
+For production, schedule this command via cron.
 
 ## Automated Sync (Cron)
 
@@ -128,7 +128,7 @@ Example (once per day at 02:00 server time):
 
 Recommended:
 
-- Start with every 6-12 hours for most sites.
+- Start with once per day, then increase frequency only if needed.
 - Use absolute paths for both PHP and your Craft project.
 - Log output so failed runs can be diagnosed quickly.
 - Run cron on the production host where Craft is installed.

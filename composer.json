@@ -1,6 +1,6 @@
 {
   "name": "splendidweb/craft-google-reviews",
-  "description": "Google Reviews sync and rendering plugin for Craft CMS 5.",
+  "description": "Sync and display Google reviews in Craft CMS 5 (Places + Business Profile).",
   "type": "craft-plugin",
   "license": "proprietary",
   "authors": [
@@ -20,6 +20,6 @@
     "name": "Google Reviews",
     "handle": "google-reviews",
     "class": "splendidweb\\googlereviews\\Plugin",
-    "description": "Sync Google Business Profile reviews into Craft custom elements and render them from stored data."
+    "description": "Sync Google Places or Business Profile reviews into Craft and render from stored data."
   }
 }

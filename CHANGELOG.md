@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.0.2 - 2026-02-25
+
 - Enabled deletion actions for `GoogleReview` elements in the Control Panel index.
 - Added explicit element permission checks (`canView`, `canSave`, `canDelete`) so delete actions are actually available in CP.
 - Fixed sync upsert behavior to include/restore trashed matching reviews, so deleted reviews can reappear correctly after re-sync.
