@@ -4,7 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
-- No changes yet.
+- Enabled deletion actions for `GoogleReview` elements in the Control Panel index.
+- Added explicit element permission checks (`canView`, `canSave`, `canDelete`) so delete actions are actually available in CP.
 
 ## 1.0.1 - 2026-02-25
 

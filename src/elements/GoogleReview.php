@@ -4,6 +4,8 @@ namespace splendidweb\googlereviews\elements;
 
 use Craft;
 use craft\base\Element;
+use craft\elements\actions\Delete;
+use craft\elements\User;
 use craft\helpers\Db;
 use craft\helpers\Html;
 use DateTime;
@@ -65,6 +67,26 @@ class GoogleReview extends Element
         $rules[] = [['googleReviewId'], 'required'];
         $rules[] = [['rating'], 'integer', 'min' => 0, 'max' => 5];
         return $rules;
+    }
+
+    public function canView(User $user): bool
+    {
+        return parent::canView($user) || $user->can('accessCp');
+    }
+
+    public function canSave(User $user): bool
+    {
+        return parent::canSave($user) || $user->can('accessCp');
+    }
+
+    public function canDelete(User $user): bool
+    {
+        return parent::canDelete($user) || $this->canSave($user);
+    }
+
+    public function canDeleteForSite(User $user): bool
+    {
+        return parent::canDeleteForSite($user) || $this->canDelete($user);
     }
 
     public function afterSave(bool $isNew): void
@@ -142,6 +164,13 @@ class GoogleReview extends Element
             'reviewDate' => Craft::t('google-reviews', 'Review Date'),
             'rating' => Craft::t('google-reviews', 'Rating'),
             'dateUpdated' => Craft::t('app', 'Date Updated'),
+        ];
+    }
+
+    protected static function defineActions(string $source): array
+    {
+        return [
+            Delete::class,
         ];
     }
 
