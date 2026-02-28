@@ -22,11 +22,34 @@
               {{ authorName|slice(0, 1)|upper }}
             </span>
           {% endif %}
-          <strong>{{ authorName }}</strong>
-          <span>{{ review.rating ?? "0" }}/5</span>
+          <strong>
+            {% if review.reviewUrl ?? null %}
+              <a href="{{ review.reviewUrl }}" rel="nofollow noopener" target="_blank">{{ authorName }}</a>
+            {% else %}
+              {{ authorName }}
+            {% endif %}
+          </strong>
+          {% if review.reviewDate ?? null %}
+            {% set daysAgo = ((now|date('U') - (review.reviewDate|date('U'))) / 86400)|round(0, 'floor') %}
+            {% set daysAgo = daysAgo < 0 ? 0 : daysAgo %}
+            <p class="google-review-card__date">
+              {% if daysAgo < 1 %}
+                Today
+              {% elseif daysAgo < 7 %}
+                {{ daysAgo }} day{{ daysAgo == 1 ? '' : 's' }} ago
+              {% else %}
+                {% set weeksAgo = (daysAgo / 7)|round(0, 'floor') %}
+                {{ weeksAgo }} week{{ weeksAgo == 1 ? '' : 's' }} ago
+              {% endif %}
+            </p>
+          {% endif %}
+          {% set rating = (review.rating ?? 0)|round(0, 'floor') %}
+          <div class="google-review-card__rating" aria-label="{{ rating }} out of 5 stars">
+            {% for i in 1..5 %}{{ i <= rating ? '★' : '☆' }}{% endfor %}
+          </div>
         </header>
         {% if review.reviewText ?? null %}
-          <p>{{ review.reviewText }}</p>
+          <p class="google-review-card__text">{{ review.reviewText|truncate(150) }}</p>
         {% endif %}
         {% if review.replyText ?? null %}
           <div class="google-review-card__reply">

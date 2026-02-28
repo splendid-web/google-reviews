@@ -1,5 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Google Reviews">
-  <rect x="4" y="4" width="56" height="56" rx="10" fill="#2563eb"/>
-  <path d="M20 24h24v4H20zm0 8h24v4H20zm0 8h16v4H20z" fill="#fff"/>
-  <path d="M44 42l2.9 5.9 6.5.9-4.7 4.5 1.1 6.4L44 56.7l-5.8 3 1.1-6.4-4.7-4.5 6.5-.9z" fill="#fbbf24"/>
+  <rect width="64" height="64" rx="15" ry="15" fill="#143765"/>
+  <path
+    d="M32 8C43.6 14.8 50 26 50 37.8C50 49.6 42.2 56 32 56C21.8 56 14 49.6 14 37.8C14 26 20.4 14.8 32 8Z"
+    fill="none"
+    stroke="#D7B400"
+    stroke-width="3.8"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M16 14h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H30l-10 8v-8h-4a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6z"
+    fill="#D7B400"
+    transform="translate(16.4 18.9) scale(0.5)"
+  />
+  <g
+    transform="translate(16.4 18.9) scale(0.5)"
+    stroke="#19C2EA"
+    stroke-width="3"
+    stroke-linecap="round"
+  >
+    <line x1="23.5" y1="24.5" x2="45.5" y2="24.5" />
+    <line x1="23.5" y1="30.5" x2="40" y2="30.5" />
+  </g>
 </svg>
