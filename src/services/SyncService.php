@@ -356,10 +356,13 @@ class SyncService extends Component
         $review = GoogleReview::find()
             ->googleReviewId($reviewId)
             ->status(null)
+            ->trashed(null)
             ->one();
 
         if (!$review instanceof GoogleReview) {
             $review = new GoogleReview();
+        } elseif ($review->trashed) {
+            Craft::$app->getElements()->restoreElement($review);
         }
 
         $author = (string)($normalizedReview['authorName'] ?? 'Anonymous');
