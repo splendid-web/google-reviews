@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added review overview summary support by storing Google-provided aggregate rating and total review count per sync.
+
 ## 1.0.3 - 2026-02-28
 
 - Replaced mode lightswitches with a single `Review Source Mode` dropdown (`Mock Data`, `Places API`, `Business Profile API`) and made Mock the default.

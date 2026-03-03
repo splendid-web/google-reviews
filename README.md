@@ -21,6 +21,7 @@ Reviews are fetched on a schedule and stored in Craft, instead of being requeste
 - Sync Google reviews into Craft
 - Control Panel index view for imported reviews
 - Frontend Twig query API (`craft.googleReviews.reviews()`)
+- Frontend summary API (`craft.googleReviews.summary()`) for aggregate rating and total review count
 - Starter template (`google-reviews/_components/reviews-example`)
 - Optional owner reply support in Business Profile mode (beta)
 - Author photo support
@@ -98,7 +99,13 @@ The plugin uses your refresh token to automatically request new access tokens on
 See example template in `/templates/_components/reviews-example.twig`.
 
 ```twig
+{% set summary = craft.googleReviews.summary() %}
 {% set reviews = craft.googleReviews.reviews(12).all() %}
+{% if summary.totalReviewCount %}
+  <p>
+    Rated {{ summary.overallRating ?? "?" }} from {{ summary.totalReviewCount }} Google reviews.
+  </p>
+{% endif %}
 {% if reviews|length %}
   <div class="google-reviews-carousel" data-google-reviews-carousel>
     {% for review in reviews %}

@@ -4,6 +4,7 @@ namespace splendidweb\googlereviews\services;
 
 use Craft;
 use craft\base\Component;
+use craft\helpers\Db as DbHelper;
 use craft\helpers\StringHelper;
 use splendidweb\googlereviews\models\SyncResult;
 use splendidweb\googlereviews\elements\GoogleReview;
@@ -32,7 +33,10 @@ class SyncService extends Component
                 $result->archived += $this->removeMockReviews();
             }
 
-            $rawReviews = $this->fetchReviews();
+            $syncPayload = $this->fetchReviewsWithSummary();
+            $this->saveSummary($syncPayload['summary']);
+
+            $rawReviews = $syncPayload['reviews'];
             $result->fetched = count($rawReviews);
 
             foreach ($rawReviews as $rawReview) {
@@ -89,19 +93,27 @@ class SyncService extends Component
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array{reviews: array<int, array<string, mixed>>, summary: array<string, mixed>}
      */
-    private function fetchReviews(): array
+    private function fetchReviewsWithSummary(): array
     {
         $settings = Plugin::getInstance()->getSettings();
         $max = max(1, (int)$settings->maxReviews);
 
         if ($settings->isMockMode()) {
-            return array_slice($this->mockReviews(), 0, min(3, $max));
+            $reviews = array_slice($this->mockReviews(), 0, min(3, $max));
+            return [
+                'reviews' => $reviews,
+                'summary' => $this->buildSummary(
+                    $this->calculateAverageRating($reviews),
+                    count($reviews),
+                    null
+                ),
+            ];
         }
 
         if ($settings->isPlacesMode()) {
-            return $this->fetchPlacesReviews($max);
+            return $this->fetchPlacesReviewsWithSummary($max);
         }
 
         $accountId = trim($settings->getParsedGoogleAccountId());
@@ -125,6 +137,8 @@ class SyncService extends Component
         $endpoint = sprintf('%s/%s/%s/reviews', self::GBP_API_BASE_URL, $accountResource, $locationResource);
 
         $reviews = [];
+        $overallRating = null;
+        $totalReviewCount = null;
         $pageToken = null;
         $client = Craft::createGuzzleClient();
 
@@ -159,17 +173,36 @@ class SyncService extends Component
                 $batch = [];
             }
 
+            if ($overallRating === null) {
+                $averageRating = $body['averageRating'] ?? $body['avgRating'] ?? null;
+                if (is_numeric($averageRating)) {
+                    $overallRating = (float)$averageRating;
+                }
+            }
+            if ($totalReviewCount === null && isset($body['totalReviewCount']) && is_numeric($body['totalReviewCount'])) {
+                $totalReviewCount = (int)$body['totalReviewCount'];
+            }
+
             $reviews = array_merge($reviews, $batch);
             $pageToken = $body['nextPageToken'] ?? null;
         } while ($pageToken && count($reviews) < $max);
 
-        return array_slice($reviews, 0, $max);
+        $reviews = array_slice($reviews, 0, $max);
+
+        return [
+            'reviews' => $reviews,
+            'summary' => $this->buildSummary(
+                $overallRating,
+                $totalReviewCount,
+                null
+            ),
+        ];
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array{reviews: array<int, array<string, mixed>>, summary: array<string, mixed>}
      */
-    private function fetchPlacesReviews(int $max): array
+    private function fetchPlacesReviewsWithSummary(int $max): array
     {
         $settings = Plugin::getInstance()->getSettings();
         $apiKey = trim($settings->getParsedPlacesApiKey());
@@ -185,7 +218,7 @@ class SyncService extends Component
         $response = $client->request('GET', 'https://places.googleapis.com/v1/' . $placeResource, [
             'headers' => [
                 'X-Goog-Api-Key' => $apiKey,
-                'X-Goog-FieldMask' => 'id,reviews,googleMapsUri',
+                'X-Goog-FieldMask' => 'id,rating,userRatingCount,reviews,googleMapsUri',
                 'Accept' => 'application/json',
             ],
             'http_errors' => false,
@@ -235,7 +268,67 @@ class SyncService extends Component
             ];
         }
 
-        return array_slice($normalizedRaw, 0, $max);
+        return [
+            'reviews' => array_slice($normalizedRaw, 0, $max),
+            'summary' => $this->buildSummary(
+                isset($body['rating']) && is_numeric($body['rating']) ? (float)$body['rating'] : null,
+                isset($body['userRatingCount']) && is_numeric($body['userRatingCount']) ? (int)$body['userRatingCount'] : null,
+                (string)($body['id'] ?? $placeId)
+            ),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildSummary(?float $overallRating, ?int $totalReviewCount, ?string $googlePlaceId): array
+    {
+        $settings = Plugin::getInstance()->getSettings();
+
+        return [
+            'sourceMode' => $settings->syncSourceMode,
+            'overallRating' => $overallRating !== null ? round($overallRating, 2) : null,
+            'totalReviewCount' => $totalReviewCount,
+            'googlePlaceId' => $googlePlaceId,
+            'lastSyncedAt' => new DateTime(),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $summary
+     */
+    private function saveSummary(array $summary): void
+    {
+        $payload = [
+            'sourceMode' => (string)($summary['sourceMode'] ?? 'mock'),
+            'overallRating' => isset($summary['overallRating']) ? (float)$summary['overallRating'] : null,
+            'totalReviewCount' => isset($summary['totalReviewCount']) ? (int)$summary['totalReviewCount'] : null,
+            'googlePlaceId' => isset($summary['googlePlaceId']) ? (string)$summary['googlePlaceId'] : null,
+            'lastSyncedAt' => DbHelper::prepareDateForDb($summary['lastSyncedAt'] ?? new DateTime()),
+        ];
+
+        DbHelper::upsert(
+            '{{%googlereviews_summary}}',
+            array_merge(['id' => 1], $payload),
+            $payload
+        );
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $reviews
+     */
+    private function calculateAverageRating(array $reviews): ?float
+    {
+        if ($reviews === []) {
+            return null;
+        }
+
+        $total = 0;
+        foreach ($reviews as $review) {
+            $total += $this->normalizeStarRating($review['starRating'] ?? 0);
+        }
+
+        return $total / count($reviews);
     }
 
     /**
