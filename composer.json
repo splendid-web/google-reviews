@@ -5,9 +5,16 @@
   "license": "proprietary",
   "authors": [
     {
-      "name": "Splendid Web"
+      "name": "Splendid Web",
+      "homepage": "https://splendidweb.co.uk"
     }
   ],
+  "support": {
+    "email": "admin@splendidweb.co.uk",
+    "issues": "https://github.com/splendid-web/google-reviews/issues?state=open",
+    "source": "https://github.com/splendid-web/google-reviews",
+    "docs": "https://github.com/splendid-web/google-reviews/blob/master/README.md"
+  },
   "require": {
     "craftcms/cms": "^5.3.0"
   },
