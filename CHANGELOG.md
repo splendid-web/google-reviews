@@ -4,7 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.0.4 - 2026-03-04
+
 - Added review overview summary support by storing Google-provided aggregate rating and total review count per sync.
+- Added Twig summary access via `craft.googleReviews.summary()` for frontend rendering.
+- Added summary table migration for existing installs and included summary table creation in fresh installs.
+- Updated README frontend example to include summary usage.
 
 ## 1.0.3 - 2026-02-28
 
