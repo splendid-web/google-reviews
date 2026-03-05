@@ -5,7 +5,7 @@ Sync and display Google reviews in Craft from server-side stored data.
 This plugin supports two data sources:
 
 - **Google Places API (quick setup):** easiest way to show reviews with minimal onboarding.
-- **Google Business Profile API (advanced beta):** OAuth-based setup for deeper account-backed data and owner replies (requires Google API access approval).
+- **Google Business Profile API (advanced):** OAuth-based setup for deeper account-backed data and owner replies (requires Google API access approval).
 
 ## Why Server-Side Storage
 
@@ -23,7 +23,7 @@ Reviews are fetched on a schedule and stored in Craft, instead of being requeste
 - Frontend Twig query API (`craft.googleReviews.reviews()`)
 - Frontend summary API (`craft.googleReviews.summary()`) for aggregate rating and total review count
 - Starter template (`google-reviews/_components/reviews-example`)
-- Optional owner reply support in Business Profile mode (beta)
+- Optional owner reply support in Business Profile mode
 - Author photo support
 - Mock mode for local/testing workflows
 
@@ -63,7 +63,7 @@ If you want the fastest setup, use Places mode.
 php craft google-reviews/sync
 ```
 
-## Business Profile Setup (Advanced OAuth - Beta)
+## Business Profile Setup (Advanced OAuth)
 
 Use this mode if you need owner-level API access and review replies.
 Availability depends on Google approving API access for your project.
