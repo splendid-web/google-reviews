@@ -31,8 +31,8 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "Place ID",
-    instructions: "Google Place ID for the business location (used when Places mode is enabled).",
+    label: "Places API Place ID",
+    instructions: "Google Place ID for the business location (used when Places API mode is enabled).",
     id: "placesPlaceId",
     name: "placesPlaceId",
     value: settings.placesPlaceId,
@@ -40,8 +40,8 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "Google Account ID",
-    instructions: "Business Profile account identifier. Env values supported.",
+    label: "GBP API Account ID",
+    instructions: "Google Business Profile account identifier. Env values supported.",
     id: "googleAccountId",
     name: "googleAccountId",
     value: settings.googleAccountId,
@@ -49,8 +49,8 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "Google Location ID",
-    instructions: "Business Profile location identifier. Env values supported.",
+    label: "GBP API Location ID",
+    instructions: "Google Business Profile location identifier. Env values supported.",
     id: "googleLocationId",
     name: "googleLocationId",
     value: settings.googleLocationId,
@@ -58,8 +58,8 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "OAuth Client ID",
-    instructions: "OAuth client ID used to refresh access tokens. Env values supported.",
+    label: "GBP API OAuth Client ID",
+    instructions: "OAuth client ID used for Google Business Profile token refresh. Env values supported.",
     id: "oauthClientId",
     name: "oauthClientId",
     value: settings.oauthClientId,
@@ -67,8 +67,8 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "OAuth Client Secret",
-    instructions: "OAuth client secret used to refresh access tokens. Env values supported.",
+    label: "GBP API OAuth Client Secret",
+    instructions: "OAuth client secret used for Google Business Profile token refresh. Env values supported.",
     id: "oauthClientSecret",
     name: "oauthClientSecret",
     value: settings.oauthClientSecret,
@@ -76,8 +76,8 @@
 }) }}
 
 {{ forms.autosuggestField({
-    label: "OAuth Refresh Token",
-    instructions: "Long-lived refresh token for server-side sync. Env values supported.",
+    label: "GBP API OAuth Refresh Token",
+    instructions: "Long-lived refresh token for Google Business Profile server-side sync. Env values supported.",
     id: "oauthRefreshToken",
     name: "oauthRefreshToken",
     value: settings.oauthRefreshToken,

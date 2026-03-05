@@ -68,31 +68,78 @@ php craft google-reviews/sync
 Use this mode if you need owner-level API access and review replies.
 Availability depends on Google approving API access for your project.
 
-1. In Google Cloud Console:
-   - Enable Business Profile APIs
-   - Configure OAuth consent screen
-   - Create OAuth Client ID + Client Secret
-2. Add your Google account as a **Test user** while app is in testing.
-3. Generate a refresh token (for example via OAuth Playground):
-   - scope: `https://www.googleapis.com/auth/business.manage`
-4. Fetch your account and location IDs:
-   - `GET https://mybusinessaccountmanagement.googleapis.com/v1/accounts`
-   - `GET https://mybusinessbusinessinformation.googleapis.com/v1/accounts/{accountId}/locations`
-5. In plugin settings:
-   - `Enable Sync` = on
-   - `Review Source Mode` = `Business Profile API`
-   - set `Google Account ID`
-   - set `Google Location ID`
-   - set `OAuth Client ID`
-   - set `OAuth Client Secret`
-   - set `OAuth Refresh Token`
-6. Run a sync:
+### 1) Configure Google Cloud
+
+1. Enable Business Profile APIs in your Google Cloud project.
+2. Configure the OAuth consent screen.
+3. Create OAuth credentials (`Client ID` and `Client Secret`).
+4. While your app is in testing, add your Google account as a **Test user**.
+
+### 2) Generate a refresh token (one-time)
+
+Use [OAuth 2.0 Playground](https://developers.google.com/oauthplayground):
+
+1. Open the gear icon and enable **Use your own OAuth credentials**.
+2. Paste your OAuth `Client ID` and `Client Secret`.
+3. Use scope: `https://www.googleapis.com/auth/business.manage`
+4. Authorize, then click **Exchange authorization code for tokens**.
+5. Save the **refresh token** (not the access token).
+
+The plugin stores your refresh token and automatically requests fresh access tokens during each sync.
+
+### 3) Fetch account and location IDs
+
+Create a short-lived access token from your refresh token:
+
+```bash
+export GOOGLE_CLIENT_ID="YOUR_CLIENT_ID"
+export GOOGLE_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+export GOOGLE_REFRESH_TOKEN="YOUR_REFRESH_TOKEN"
+
+ACCESS_TOKEN=$(curl -s https://oauth2.googleapis.com/token \
+  -d client_id="$GOOGLE_CLIENT_ID" \
+  -d client_secret="$GOOGLE_CLIENT_SECRET" \
+  -d refresh_token="$GOOGLE_REFRESH_TOKEN" \
+  -d grant_type=refresh_token | php -r 'echo json_decode(stream_get_contents(STDIN), true)["access_token"] ?? "";')
+```
+
+Fetch accounts:
+
+```bash
+curl -s "https://mybusinessaccountmanagement.googleapis.com/v1/accounts" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+Copy `accountId` from `name` (for example: `accounts/1234567890` -> `1234567890`).
+
+Fetch locations for that account:
+
+```bash
+ACCOUNT_ID="1234567890"
+
+curl -s "https://mybusinessbusinessinformation.googleapis.com/v1/accounts/$ACCOUNT_ID/locations?pageSize=100&readMask=name,title,storeCode,metadata" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+Copy `locationId` from `name` (for example: `locations/9876543210` -> `9876543210`).
+
+### 4) Add values in plugin settings
+
+- `Enable Sync` = on
+- `Review Source Mode` = `Business Profile API`
+- `Google Account ID` = your account ID
+- `Google Location ID` = your location ID
+- `OAuth Client ID` = your OAuth client ID
+- `OAuth Client Secret` = your OAuth client secret
+- `OAuth Refresh Token` = your refresh token
+
+Run a sync:
 
 ```bash
 php craft google-reviews/sync
 ```
-
-The plugin uses your refresh token to automatically request new access tokens on each sync.
 
 ## Frontend Usage
 
