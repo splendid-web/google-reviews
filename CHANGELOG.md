@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.0.5 - 2026-03-05
+
+- Improved Business Profile setup documentation with copy-paste OAuth/token/account/location steps.
+- Added practical troubleshooting notes for common setup errors (`401`, token formatting, OAuth test users, zsh shebang issue).
+- Clarified plugin settings labels by prefixing API-specific fields with `Places API` and `GBP API`.
+
 ## 1.0.4 - 2026-03-04
 
 - Added review overview summary support by storing Google-provided aggregate rating and total review count per sync.
