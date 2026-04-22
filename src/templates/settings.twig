@@ -90,19 +90,6 @@
     suggestEnvVars: true
 }) }}
 
-<div class="field">
-    <div class="heading">
-        <label>GBP API OAuth Connect</label>
-        <div class="instructions">
-            <p>Use this to authorize Google and mint a refresh token for this OAuth client. Add <code>{{ actionUrl('google-reviews/oauth/callback') }}</code> to your Google OAuth Client authorized redirect URIs.</p>
-        </div>
-    </div>
-    <div class="input ltr">
-        <a class="btn" href="{{ oauthConnectUrl }}">Connect Google Business Profile</a>
-        <a class="btn" href="{{ oauthTestUrl }}">Test OAuth Credentials</a>
-    </div>
-</div>
-
 {{ forms.textField({
     label: "Max Reviews",
     id: "maxReviews",
@@ -122,4 +109,37 @@
     max: 5,
     value: settings.minimumRating
 }) }}
+
+<div class="field">
+    <div class="heading">
+        <label>GBP API OAuth Connect</label>
+        <div class="instructions">
+            <p>Use this to authorize Google and mint a refresh token for this OAuth client. Add <code>{{ actionUrl('google-reviews/oauth/callback') }}</code> to your Google OAuth Client authorized redirect URIs.</p>
+        </div>
+    </div>
+    <div class="input ltr">
+        <a class="btn" href="{{ oauthConnectUrl }}">Connect Google Business Profile</a>
+        <a class="btn" href="{{ oauthTestUrl }}">Test OAuth Credentials</a>
+    </div>
+</div>
+
+<div class="field">
+    <div class="heading">
+        <label>Manual Sync</label>
+        <div class="instructions">
+            <p>Run a sync immediately from the Control Panel.</p>
+        </div>
+    </div>
+    <div class="input ltr">
+        <button
+            type="submit"
+            class="btn submit"
+            formaction="{{ actionUrl('google-reviews/sync/run') }}"
+            formmethod="post"
+            formnovalidate
+        >
+            Run Sync Now
+        </button>
+    </div>
+</div>
 

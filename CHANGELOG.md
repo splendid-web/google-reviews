@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.0.6 - 2026-04-22
+
+- Added native Google Business Profile OAuth connect flow in plugin settings, including authorization start/callback handling.
+- Added OAuth credential test action in settings to verify refresh-token exchange before running sync.
+- Added a manual `Run Sync Now` button in settings for Control Panel-triggered sync runs with result notices.
+- Improved settings action flow to keep users on plugin settings after manual sync.
+
 ## 1.0.5 - 2026-03-05
 
 - Improved Business Profile setup documentation with copy-paste OAuth/token/account/location steps.
