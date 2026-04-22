@@ -16,6 +16,7 @@ use Throwable;
 class SyncService extends Component
 {
     private const GBP_API_BASE_URL = 'https://mybusiness.googleapis.com/v4';
+    private const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
     public function sync(): SyncResult
     {
@@ -497,10 +498,10 @@ class SyncService extends Component
         }
     }
 
-    private function fetchAccessToken(string $clientId, string $clientSecret, string $refreshToken): string
+    public function fetchAccessToken(string $clientId, string $clientSecret, string $refreshToken): string
     {
         $client = Craft::createGuzzleClient();
-        $response = $client->request('POST', 'https://oauth2.googleapis.com/token', [
+        $response = $client->request('POST', self::GOOGLE_OAUTH_TOKEN_URL, [
             'form_params' => [
                 'client_id' => $clientId,
                 'client_secret' => $clientSecret,
@@ -520,6 +521,47 @@ class SyncService extends Component
         }
 
         return (string)$body['access_token'];
+    }
+
+    /**
+     * @return array{refreshToken: string|null, accessToken: string, expiresIn: int|null}
+     */
+    public function exchangeAuthorizationCode(
+        string $clientId,
+        string $clientSecret,
+        string $authorizationCode,
+        string $redirectUri
+    ): array {
+        $client = Craft::createGuzzleClient();
+        $response = $client->request('POST', self::GOOGLE_OAUTH_TOKEN_URL, [
+            'form_params' => [
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'code' => $authorizationCode,
+                'grant_type' => 'authorization_code',
+                'redirect_uri' => $redirectUri,
+            ],
+            'http_errors' => false,
+            'timeout' => 20,
+        ]);
+
+        $statusCode = $response->getStatusCode();
+        $body = json_decode((string)$response->getBody(), true);
+
+        if ($statusCode >= 400 || !is_array($body) || empty($body['access_token'])) {
+            $error = is_array($body) ? json_encode($body) : (string)$response->getBody();
+            throw new RuntimeException('OAuth authorization code exchange failed (' . $statusCode . '): ' . $error);
+        }
+
+        $refreshToken = isset($body['refresh_token']) && is_string($body['refresh_token'])
+            ? trim($body['refresh_token'])
+            : null;
+
+        return [
+            'refreshToken' => $refreshToken !== '' ? $refreshToken : null,
+            'accessToken' => (string)$body['access_token'],
+            'expiresIn' => isset($body['expires_in']) && is_numeric($body['expires_in']) ? (int)$body['expires_in'] : null,
+        ];
     }
 
     private function normalizeResourceName(string $value, string $prefix): string

@@ -1,4 +1,10 @@
 {% import "_includes/forms" as forms %}
+{% set oauthConnectUrl = actionUrl('google-reviews/oauth/start', {
+    return: cpUrl('settings/plugins/google-reviews')
+}) %}
+{% set oauthTestUrl = actionUrl('google-reviews/oauth/test', {
+    return: cpUrl('settings/plugins/google-reviews')
+}) %}
 
 {{ forms.lightswitchField({
     label: "Enable Sync",
@@ -83,6 +89,19 @@
     value: settings.oauthRefreshToken,
     suggestEnvVars: true
 }) }}
+
+<div class="field">
+    <div class="heading">
+        <label>GBP API OAuth Connect</label>
+        <div class="instructions">
+            <p>Use this to authorize Google and mint a refresh token for this OAuth client. Add <code>{{ actionUrl('google-reviews/oauth/callback') }}</code> to your Google OAuth Client authorized redirect URIs.</p>
+        </div>
+    </div>
+    <div class="input ltr">
+        <a class="btn" href="{{ oauthConnectUrl }}">Connect Google Business Profile</a>
+        <a class="btn" href="{{ oauthTestUrl }}">Test OAuth Credentials</a>
+    </div>
+</div>
 
 {{ forms.textField({
     label: "Max Reviews",

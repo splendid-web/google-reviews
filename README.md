@@ -77,6 +77,24 @@ Availability depends on Google approving API access for your project.
 
 ### 2) Generate a refresh token (one-time)
 
+You can use either method:
+
+- Plugin Settings OAuth connect flow (recommended)
+- OAuth 2.0 Playground (manual)
+
+#### Option A: Plugin Settings OAuth connect flow
+
+1. Add your OAuth client credentials in plugin settings:
+   - `GBP API OAuth Client ID`
+   - `GBP API OAuth Client Secret`
+2. Add this callback URL to your Google OAuth Client authorized redirect URIs:
+   - `https://YOUR_SITE_URL/actions/google-reviews/oauth/callback`
+3. In plugin settings, click **Connect Google Business Profile**.
+4. Approve access and return to Craft.
+5. If your refresh token field uses an env var reference (for example `$GOOGLE_REVIEWS_REFRESH_TOKEN`), copy the token shown in the success notice into your `.env` value.
+
+#### Option B: OAuth Playground (manual)
+
 Use [OAuth 2.0 Playground](https://developers.google.com/oauthplayground):
 
 1. Open the gear icon and enable **Use your own OAuth credentials**.
@@ -129,11 +147,11 @@ Copy `locationId` from `name` (for example: `locations/9876543210` -> `987654321
 
 - `Enable Sync` = on
 - `Review Source Mode` = `Business Profile API`
-- `Google Account ID` = your account ID
-- `Google Location ID` = your location ID
-- `OAuth Client ID` = your OAuth client ID
-- `OAuth Client Secret` = your OAuth client secret
-- `OAuth Refresh Token` = your refresh token
+- `GBP API Account ID` = your account ID
+- `GBP API Location ID` = your location ID
+- `GBP API OAuth Client ID` = your OAuth client ID
+- `GBP API OAuth Client Secret` = your OAuth client secret
+- `GBP API OAuth Refresh Token` = your refresh token
 
 Run a sync:
 
