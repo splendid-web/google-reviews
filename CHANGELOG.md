@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.0.7 - 2026-04-29
+
+- Added multi-location sync support for both Places API and Business Profile API by allowing location settings to resolve to either a single ID or a JSON array of IDs.
+- Added per-review location metadata storage (`sourceLocationId`, `sourceLocationName`) with migration support for existing installs.
+- Updated sync normalization/upsert flow to scope review identity by location, preventing collisions across multiple locations.
+- Added location-aware query support (`sourceLocationId`, `sourceLocationName`) and optional Twig filtering args in `craft.googleReviews.reviews()` / `entries()`.
+- Added `Location` column to the Control Panel review index for clearer editor visibility.
+- Improved Business Profile location naming by resolving a friendly title via Business Information API with safe fallbacks.
+- Updated settings help text and README documentation with multi-location configuration and Twig usage examples.
+
 ## 1.0.6 - 2026-04-22
 
 - Added native Google Business Profile OAuth connect flow in plugin settings, including authorization start/callback handling.

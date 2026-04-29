@@ -22,6 +22,8 @@ class GoogleReview extends Element
     public string $replyText = '';
     public ?DateTime $replyUpdatedAt = null;
     public string $reviewUrl = '';
+    public string $sourceLocationId = '';
+    public string $sourceLocationName = '';
     public string $source = 'Google';
     public bool $isImported = true;
     public bool $featured = false;
@@ -102,6 +104,8 @@ class GoogleReview extends Element
                 'replyText' => $this->replyText,
                 'replyUpdatedAt' => Db::prepareDateForDb($this->replyUpdatedAt),
                 'reviewUrl' => $this->reviewUrl,
+                'sourceLocationId' => $this->sourceLocationId,
+                'sourceLocationName' => $this->sourceLocationName,
                 'source' => $this->source,
                 'isImported' => $this->isImported,
                 'featured' => $this->featured,
@@ -123,6 +127,8 @@ class GoogleReview extends Element
             'authorName',
             'reviewText',
             'replyText',
+            'sourceLocationId',
+            'sourceLocationName',
             'source',
         ];
     }
@@ -144,6 +150,7 @@ class GoogleReview extends Element
         return [
             'authorName' => Craft::t('google-reviews', 'Author'),
             'authorPhoto' => Craft::t('google-reviews', 'Photo'),
+            'sourceLocationName' => Craft::t('google-reviews', 'Location'),
             'rating' => Craft::t('google-reviews', 'Rating'),
             'reviewText' => Craft::t('google-reviews', 'Comment'),
             'replyText' => Craft::t('google-reviews', 'Reply'),
@@ -154,7 +161,7 @@ class GoogleReview extends Element
 
     protected static function defineDefaultTableAttributes(string $source): array
     {
-        return ['authorName', 'authorPhoto', 'rating', 'reviewText', 'replyText', 'reviewDate', 'dateUpdated'];
+        return ['authorName', 'authorPhoto', 'sourceLocationName', 'rating', 'reviewText', 'replyText', 'reviewDate', 'dateUpdated'];
     }
 
     protected static function defineSortOptions(): array
@@ -187,6 +194,7 @@ class GoogleReview extends Element
                     'style' => 'border-radius: 50%; object-fit: cover;',
                 ])
                 : '—',
+            'sourceLocationName' => Craft::$app->getFormatter()->asText($this->sourceLocationName !== '' ? $this->sourceLocationName : '—'),
             'rating' => Craft::$app->getFormatter()->asText((string)$this->rating),
             'reviewText' => Craft::$app->getFormatter()->asText(mb_strimwidth($this->reviewText, 0, 140, '...')),
             'replyText' => Craft::$app->getFormatter()->asText(mb_strimwidth($this->replyText, 0, 140, '...')),

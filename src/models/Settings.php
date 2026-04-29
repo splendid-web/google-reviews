@@ -78,6 +78,14 @@ class Settings extends Model
         return App::parseEnv($this->googleLocationId);
     }
 
+    /**
+     * @return string[]
+     */
+    public function getParsedGoogleLocationIds(): array
+    {
+        return $this->parseEnvList($this->googleLocationId);
+    }
+
     public function getParsedPlacesApiKey(): string
     {
         return App::parseEnv($this->placesApiKey);
@@ -86,5 +94,43 @@ class Settings extends Model
     public function getParsedPlacesPlaceId(): string
     {
         return App::parseEnv($this->placesPlaceId);
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getParsedPlacesPlaceIds(): array
+    {
+        return $this->parseEnvList($this->placesPlaceId);
+    }
+
+    /**
+     * @return string[]
+     */
+    private function parseEnvList(string $rawValue): array
+    {
+        $parsed = trim(App::parseEnv($rawValue));
+        if ($parsed === '') {
+            return [];
+        }
+
+        $decoded = json_decode($parsed, true);
+        if (is_array($decoded)) {
+            $values = [];
+            foreach ($decoded as $value) {
+                if (!is_string($value)) {
+                    continue;
+                }
+
+                $normalized = trim($value);
+                if ($normalized !== '') {
+                    $values[] = $normalized;
+                }
+            }
+
+            return array_values(array_unique($values));
+        }
+
+        return [$parsed];
     }
 }

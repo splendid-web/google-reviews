@@ -16,6 +16,7 @@ use Throwable;
 class SyncService extends Component
 {
     private const GBP_API_BASE_URL = 'https://mybusiness.googleapis.com/v4';
+    private const GBP_INFO_API_BASE_URL = 'https://mybusinessbusinessinformation.googleapis.com/v1';
     private const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
     public function sync(): SyncResult
@@ -99,10 +100,10 @@ class SyncService extends Component
     private function fetchReviewsWithSummary(): array
     {
         $settings = Plugin::getInstance()->getSettings();
-        $max = max(1, (int)$settings->maxReviews);
+        $perLocationMax = max(1, (int)$settings->maxReviews);
 
         if ($settings->isMockMode()) {
-            $reviews = array_slice($this->mockReviews(), 0, min(3, $max));
+            $reviews = array_slice($this->mockReviews(), 0, min(3, $perLocationMax));
             return [
                 'reviews' => $reviews,
                 'summary' => $this->buildSummary(
@@ -114,17 +115,87 @@ class SyncService extends Component
         }
 
         if ($settings->isPlacesMode()) {
-            return $this->fetchPlacesReviewsWithSummary($max);
+            $placeIds = $settings->getParsedPlacesPlaceIds();
+            if ($placeIds === []) {
+                throw new RuntimeException('At least one Place ID is required when Places mode is enabled.');
+            }
+
+            $reviews = [];
+            $weightedTotal = 0.0;
+            $weightedCount = 0;
+            $totalReviewCount = 0;
+
+            foreach ($placeIds as $placeId) {
+                $payload = $this->fetchPlacesReviewsWithSummary($placeId, $perLocationMax);
+                $reviews = array_merge($reviews, $payload['reviews']);
+
+                $locationRating = $payload['summary']['overallRating'] ?? null;
+                $locationCount = $payload['summary']['totalReviewCount'] ?? null;
+                if (is_numeric($locationRating) && is_numeric($locationCount) && (int)$locationCount > 0) {
+                    $weightedTotal += ((float)$locationRating) * (int)$locationCount;
+                    $weightedCount += (int)$locationCount;
+                    $totalReviewCount += (int)$locationCount;
+                }
+            }
+
+            $overallRating = $weightedCount > 0 ? $weightedTotal / $weightedCount : $this->calculateAverageRating($reviews);
+            if ($weightedCount === 0) {
+                $totalReviewCount = count($reviews);
+            }
+
+            return [
+                'reviews' => $reviews,
+                'summary' => $this->buildSummary($overallRating, $totalReviewCount, null),
+            ];
         }
 
+        $locationIds = $settings->getParsedGoogleLocationIds();
+        if ($locationIds === []) {
+            throw new RuntimeException('At least one Google location ID is required when Business Profile mode is selected.');
+        }
+
+        $reviews = [];
+        $weightedTotal = 0.0;
+        $weightedCount = 0;
+        $totalReviewCount = 0;
+
+        foreach ($locationIds as $locationId) {
+            $payload = $this->fetchBusinessProfileReviewsWithSummary($locationId, $perLocationMax);
+            $reviews = array_merge($reviews, $payload['reviews']);
+
+            $locationRating = $payload['summary']['overallRating'] ?? null;
+            $locationCount = $payload['summary']['totalReviewCount'] ?? null;
+            if (is_numeric($locationRating) && is_numeric($locationCount) && (int)$locationCount > 0) {
+                $weightedTotal += ((float)$locationRating) * (int)$locationCount;
+                $weightedCount += (int)$locationCount;
+                $totalReviewCount += (int)$locationCount;
+            }
+        }
+
+        $overallRating = $weightedCount > 0 ? $weightedTotal / $weightedCount : $this->calculateAverageRating($reviews);
+        if ($weightedCount === 0) {
+            $totalReviewCount = count($reviews);
+        }
+
+        return [
+            'reviews' => $reviews,
+            'summary' => $this->buildSummary($overallRating, $totalReviewCount, null),
+        ];
+    }
+
+    /**
+     * @return array{reviews: array<int, array<string, mixed>>, summary: array<string, mixed>}
+     */
+    private function fetchBusinessProfileReviewsWithSummary(string $locationId, int $max): array
+    {
+        $settings = Plugin::getInstance()->getSettings();
         $accountId = trim($settings->getParsedGoogleAccountId());
-        $locationId = trim($settings->getParsedGoogleLocationId());
         $clientId = trim($settings->getParsedOAuthClientId());
         $clientSecret = trim($settings->getParsedOAuthClientSecret());
         $refreshToken = trim($settings->getParsedOAuthRefreshToken());
 
-        if ($accountId === '' || $locationId === '') {
-            throw new RuntimeException('Google account/location IDs are required when Business Profile mode is selected.');
+        if ($accountId === '' || trim($locationId) === '') {
+            throw new RuntimeException('Google account ID and location ID are required when Business Profile mode is selected.');
         }
 
         if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
@@ -132,9 +203,9 @@ class SyncService extends Component
         }
 
         $accessToken = $this->fetchAccessToken($clientId, $clientSecret, $refreshToken);
-
         $accountResource = $this->normalizeResourceName($accountId, 'accounts');
         $locationResource = $this->normalizeResourceName($locationId, 'locations');
+        $locationDisplayName = $this->fetchBusinessProfileLocationName($accountResource, $locationResource, $accessToken);
         $endpoint = sprintf('%s/%s/%s/reviews', self::GBP_API_BASE_URL, $accountResource, $locationResource);
 
         $reviews = [];
@@ -144,9 +215,7 @@ class SyncService extends Component
         $client = Craft::createGuzzleClient();
 
         do {
-            $query = [
-                'pageSize' => min(50, max(1, $max)),
-            ];
+            $query = ['pageSize' => min(50, max(1, $max))];
             if ($pageToken) {
                 $query['pageToken'] = $pageToken;
             }
@@ -163,7 +232,6 @@ class SyncService extends Component
 
             $statusCode = $response->getStatusCode();
             $body = json_decode((string)$response->getBody(), true);
-
             if ($statusCode >= 400) {
                 $error = is_array($body) ? json_encode($body) : (string)$response->getBody();
                 throw new RuntimeException('Google reviews API request failed (' . $statusCode . '): ' . $error);
@@ -172,6 +240,16 @@ class SyncService extends Component
             $batch = $body['reviews'] ?? [];
             if (!is_array($batch)) {
                 $batch = [];
+            }
+
+            foreach ($batch as $review) {
+                if (!is_array($review)) {
+                    continue;
+                }
+
+                $review['_sourceLocationId'] = $locationResource;
+                $review['_sourceLocationName'] = $locationDisplayName;
+                $reviews[] = $review;
             }
 
             if ($overallRating === null) {
@@ -184,7 +262,6 @@ class SyncService extends Component
                 $totalReviewCount = (int)$body['totalReviewCount'];
             }
 
-            $reviews = array_merge($reviews, $batch);
             $pageToken = $body['nextPageToken'] ?? null;
         } while ($pageToken && count($reviews) < $max);
 
@@ -192,22 +269,62 @@ class SyncService extends Component
 
         return [
             'reviews' => $reviews,
-            'summary' => $this->buildSummary(
-                $overallRating,
-                $totalReviewCount,
-                null
-            ),
+            'summary' => [
+                'overallRating' => $overallRating,
+                'totalReviewCount' => $totalReviewCount,
+            ],
         ];
+    }
+
+    private function fetchBusinessProfileLocationName(string $accountResource, string $locationResource, string $accessToken): string
+    {
+        $locationId = basename(trim($locationResource, '/'));
+        $fallback = $locationResource;
+        if ($locationId === '') {
+            return $fallback;
+        }
+
+        $client = Craft::createGuzzleClient();
+        $endpoints = [
+            sprintf('%s/%s/locations/%s', self::GBP_INFO_API_BASE_URL, $accountResource, $locationId),
+            sprintf('%s/%s', self::GBP_INFO_API_BASE_URL, trim($locationResource, '/')),
+        ];
+
+        foreach ($endpoints as $endpoint) {
+            $response = $client->request('GET', $endpoint, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Accept' => 'application/json',
+                ],
+                'query' => [
+                    'readMask' => 'title',
+                ],
+                'http_errors' => false,
+                'timeout' => 20,
+            ]);
+
+            $body = json_decode((string)$response->getBody(), true);
+            if ($response->getStatusCode() >= 400 || !is_array($body)) {
+                continue;
+            }
+
+            $title = isset($body['title']) && is_string($body['title']) ? trim($body['title']) : '';
+            if ($title !== '') {
+                return $title;
+            }
+        }
+
+        return $fallback;
     }
 
     /**
      * @return array{reviews: array<int, array<string, mixed>>, summary: array<string, mixed>}
      */
-    private function fetchPlacesReviewsWithSummary(int $max): array
+    private function fetchPlacesReviewsWithSummary(string $placeId, int $max): array
     {
         $settings = Plugin::getInstance()->getSettings();
         $apiKey = trim($settings->getParsedPlacesApiKey());
-        $placeId = trim($settings->getParsedPlacesPlaceId());
+        $placeId = trim($placeId);
 
         if ($apiKey === '' || $placeId === '') {
             throw new RuntimeException('Places API key and Place ID are required when Places mode is enabled.');
@@ -219,7 +336,7 @@ class SyncService extends Component
         $response = $client->request('GET', 'https://places.googleapis.com/v1/' . $placeResource, [
             'headers' => [
                 'X-Goog-Api-Key' => $apiKey,
-                'X-Goog-FieldMask' => 'id,rating,userRatingCount,reviews,googleMapsUri',
+                'X-Goog-FieldMask' => 'id,displayName,rating,userRatingCount,reviews,googleMapsUri',
                 'Accept' => 'application/json',
             ],
             'http_errors' => false,
@@ -239,6 +356,15 @@ class SyncService extends Component
             $reviews = [];
         }
 
+        $locationId = (string)($body['id'] ?? $placeId);
+        $displayName = $body['displayName'] ?? null;
+        if (is_array($displayName)) {
+            $locationName = (string)($displayName['text'] ?? $locationId);
+        } elseif (is_string($displayName) && trim($displayName) !== '') {
+            $locationName = trim($displayName);
+        } else {
+            $locationName = $locationId;
+        }
         $placeUrl = (string)($body['googleMapsUri'] ?? '');
         $normalizedRaw = [];
         foreach ($reviews as $index => $review) {
@@ -257,6 +383,8 @@ class SyncService extends Component
             $rawId = $authorUri . '|' . $publishTime . '|' . $index;
             $normalizedRaw[] = [
                 'reviewId' => 'places-' . md5($rawId),
+                '_sourceLocationId' => $locationId,
+                '_sourceLocationName' => $locationName,
                 'reviewer' => [
                     'displayName' => (string)($authorAttribution['displayName'] ?? ''),
                     'profilePhotoUrl' => $authorPhotoUri,
@@ -384,9 +512,23 @@ class SyncService extends Component
         if ($reviewId === '' && !empty($review['name']) && is_string($review['name'])) {
             $reviewId = (string)preg_replace('/^.*\/reviews\//', '', $review['name']);
         }
+        if ($reviewId === '') {
+            $reviewId = md5(json_encode([
+                $review['reviewer']['displayName'] ?? '',
+                $review['createTime'] ?? '',
+                $review['comment'] ?? '',
+                $review['reviewLink'] ?? '',
+            ]));
+        }
+
+        $sourceLocationId = (string)($review['_sourceLocationId'] ?? '');
+        $sourceLocationName = (string)($review['_sourceLocationName'] ?? $sourceLocationId);
+        $scopedReviewId = $sourceLocationId !== ''
+            ? md5($sourceLocationId . '::' . $reviewId)
+            : $reviewId;
 
         return [
-            'googleReviewId' => $reviewId,
+            'googleReviewId' => $scopedReviewId,
             'authorName' => (string)($review['reviewer']['displayName'] ?? ''),
             'authorPhotoUrl' => (string)($review['reviewer']['profilePhotoUrl'] ?? ''),
             'rating' => $this->normalizeStarRating($review['starRating'] ?? 0),
@@ -395,6 +537,8 @@ class SyncService extends Component
             'replyText' => (string)($review['reviewReply']['comment'] ?? ''),
             'replyUpdatedAt' => $review['reviewReply']['updateTime'] ?? null,
             'reviewUrl' => (string)($review['reviewLink'] ?? $review['name'] ?? ''),
+            'sourceLocationId' => $sourceLocationId,
+            'sourceLocationName' => $sourceLocationName,
             'source' => 'Google',
             'isImported' => true,
         ];
@@ -471,6 +615,8 @@ class SyncService extends Component
         $review->reviewText = (string)($normalizedReview['reviewText'] ?? '');
         $review->replyText = (string)($normalizedReview['replyText'] ?? '');
         $review->reviewUrl = (string)($normalizedReview['reviewUrl'] ?? '');
+        $review->sourceLocationId = (string)($normalizedReview['sourceLocationId'] ?? '');
+        $review->sourceLocationName = (string)($normalizedReview['sourceLocationName'] ?? '');
         $review->source = (string)($normalizedReview['source'] ?? 'Google');
         $review->isImported = (bool)($normalizedReview['isImported'] ?? true);
 

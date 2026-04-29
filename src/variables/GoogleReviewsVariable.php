@@ -37,12 +37,22 @@ class GoogleReviewsVariable
         ];
     }
 
-    public function entries(int $limit = 10, ?int $minimumRating = null): GoogleReviewQuery
+    public function entries(
+        int $limit = 10,
+        ?int $minimumRating = null,
+        ?string $sourceLocationId = null,
+        ?string $sourceLocationName = null
+    ): GoogleReviewQuery
     {
-        return $this->reviews($limit, $minimumRating);
+        return $this->reviews($limit, $minimumRating, $sourceLocationId, $sourceLocationName);
     }
 
-    public function reviews(int $limit = 10, ?int $minimumRating = null): GoogleReviewQuery
+    public function reviews(
+        int $limit = 10,
+        ?int $minimumRating = null,
+        ?string $sourceLocationId = null,
+        ?string $sourceLocationName = null
+    ): GoogleReviewQuery
     {
         $query = GoogleReview::find()
             ->limit($limit)
@@ -50,6 +60,14 @@ class GoogleReviewsVariable
 
         if ($minimumRating !== null) {
             $query->rating($minimumRating . '..5');
+        }
+
+        if ($sourceLocationId !== null && trim($sourceLocationId) !== '') {
+            $query->sourceLocationId(trim($sourceLocationId));
+        }
+
+        if ($sourceLocationName !== null && trim($sourceLocationName) !== '') {
+            $query->sourceLocationName(trim($sourceLocationName));
         }
 
         return $query;

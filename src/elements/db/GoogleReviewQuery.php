@@ -10,6 +10,8 @@ class GoogleReviewQuery extends ElementQuery
     public mixed $googleReviewId = null;
     public mixed $rating = null;
     public mixed $source = null;
+    public mixed $sourceLocationId = null;
+    public mixed $sourceLocationName = null;
     public mixed $featured = null;
 
     public function googleReviewId(mixed $value): self
@@ -27,6 +29,18 @@ class GoogleReviewQuery extends ElementQuery
     public function source(mixed $value): self
     {
         $this->source = $value;
+        return $this;
+    }
+
+    public function sourceLocationId(mixed $value): self
+    {
+        $this->sourceLocationId = $value;
+        return $this;
+    }
+
+    public function sourceLocationName(mixed $value): self
+    {
+        $this->sourceLocationName = $value;
         return $this;
     }
 
@@ -49,6 +63,8 @@ class GoogleReviewQuery extends ElementQuery
             'googlereviews_reviews.replyText',
             'googlereviews_reviews.replyUpdatedAt',
             'googlereviews_reviews.reviewUrl',
+            'googlereviews_reviews.sourceLocationId',
+            'googlereviews_reviews.sourceLocationName',
             'googlereviews_reviews.source',
             'googlereviews_reviews.isImported',
             'googlereviews_reviews.featured',
@@ -64,6 +80,14 @@ class GoogleReviewQuery extends ElementQuery
 
         if ($this->source !== null) {
             $this->subQuery->andWhere(Db::parseParam('googlereviews_reviews.source', $this->source));
+        }
+
+        if ($this->sourceLocationId !== null) {
+            $this->subQuery->andWhere(Db::parseParam('googlereviews_reviews.sourceLocationId', $this->sourceLocationId));
+        }
+
+        if ($this->sourceLocationName !== null) {
+            $this->subQuery->andWhere(Db::parseParam('googlereviews_reviews.sourceLocationName', $this->sourceLocationName));
         }
 
         if ($this->featured !== null) {

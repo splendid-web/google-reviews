@@ -287,3 +287,31 @@ Use `places[].id` from the response as your plugin `Place ID`.
 - If you need more than 5 reviews and owner replies, use Business Profile mode.
 - Owner replies are only available via Business Profile mode, not Places mode.
 - Keep credentials in environment variables where possible.
+- Multi-location is supported by setting `Places API Place ID` or `GBP API Location ID` to an env var that resolves to a JSON array of IDs (or a single string ID for one location).
+
+Simple `.env` examples:
+
+```dotenv
+# Single location
+GOOGLE_REVIEWS_PLACE_ID="places/ChIJSingleExample"
+GOOGLE_REVIEWS_LOCATION_ID="locations/1234567890123456789"
+
+# Multi-location (JSON array)
+GOOGLE_REVIEWS_PLACE_ID='["places/ChIJHotelA","places/ChIJHotelB"]'
+GOOGLE_REVIEWS_LOCATION_ID='["locations/1234567890123456789","locations/9876543210987654321"]'
+```
+
+## Multi-location filtering in Twig
+
+Each review stores:
+
+- `sourceLocationId` (stable filter key)
+- `sourceLocationName` (human-readable label)
+
+Use optional location filters:
+
+```twig
+{% set allReviews = craft.googleReviews.reviews(50).all() %}
+{% set oneLocation = craft.googleReviews.reviews(50, null, 'places/ChIJ123...', null).all() %}
+{% set byName = craft.googleReviews.reviews(50, null, null, 'Hotel London').all() %}
+```

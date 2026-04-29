@@ -24,6 +24,8 @@ class Install extends Migration
                 'replyText' => $this->text(),
                 'replyUpdatedAt' => $this->dateTime(),
                 'reviewUrl' => $this->string(1024)->notNull()->defaultValue(''),
+                'sourceLocationId' => $this->string(255)->notNull()->defaultValue(''),
+                'sourceLocationName' => $this->string(255)->notNull()->defaultValue(''),
                 'source' => $this->string(50)->notNull()->defaultValue('Google'),
                 'isImported' => $this->boolean()->notNull()->defaultValue(true),
                 'featured' => $this->boolean()->notNull()->defaultValue(false),
@@ -35,6 +37,7 @@ class Install extends Migration
             $this->createIndex(null, $table, ['googleReviewId'], true);
             $this->createIndex(null, $table, ['rating']);
             $this->createIndex(null, $table, ['reviewDate']);
+            $this->createIndex(null, $table, ['sourceLocationId']);
             $this->createIndex(null, $table, ['isImported']);
             $this->createIndex(null, $table, ['featured']);
 

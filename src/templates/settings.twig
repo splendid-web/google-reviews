@@ -38,7 +38,7 @@
 
 {{ forms.autosuggestField({
     label: "Places API Place ID",
-    instructions: "Google Place ID for the business location (used when Places API mode is enabled).",
+    instructions: "Google Place ID for the business location. For multi-location, env var may resolve to a JSON array of IDs.",
     id: "placesPlaceId",
     name: "placesPlaceId",
     value: settings.placesPlaceId,
@@ -56,7 +56,7 @@
 
 {{ forms.autosuggestField({
     label: "GBP API Location ID",
-    instructions: "Google Business Profile location identifier. Env values supported.",
+    instructions: "Google Business Profile location identifier. For multi-location, env var may resolve to a JSON array of IDs.",
     id: "googleLocationId",
     name: "googleLocationId",
     value: settings.googleLocationId,
