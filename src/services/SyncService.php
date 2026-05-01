@@ -36,7 +36,7 @@ class SyncService extends Component
             }
 
             $syncPayload = $this->fetchReviewsWithSummary();
-            $this->saveSummary($syncPayload['summary']);
+            $this->saveSummaries($syncPayload['summaries']);
 
             $rawReviews = $syncPayload['reviews'];
             $result->fetched = count($rawReviews);
@@ -95,7 +95,7 @@ class SyncService extends Component
     }
 
     /**
-     * @return array{reviews: array<int, array<string, mixed>>, summary: array<string, mixed>}
+     * @return array{reviews: array<int, array<string, mixed>>, summaries: array<int, array<string, mixed>>}
      */
     private function fetchReviewsWithSummary(): array
     {
@@ -106,11 +106,15 @@ class SyncService extends Component
             $reviews = array_slice($this->mockReviews(), 0, min(3, $perLocationMax));
             return [
                 'reviews' => $reviews,
-                'summary' => $this->buildSummary(
-                    $this->calculateAverageRating($reviews),
-                    count($reviews),
-                    null
-                ),
+                'summaries' => [
+                    $this->buildSummary(
+                        $this->calculateAverageRating($reviews),
+                        count($reviews),
+                        null,
+                        '',
+                        'All Locations'
+                    ),
+                ],
             ];
         }
 
@@ -124,10 +128,12 @@ class SyncService extends Component
             $weightedTotal = 0.0;
             $weightedCount = 0;
             $totalReviewCount = 0;
+            $locationSummaries = [];
 
             foreach ($placeIds as $placeId) {
                 $payload = $this->fetchPlacesReviewsWithSummary($placeId, $perLocationMax);
                 $reviews = array_merge($reviews, $payload['reviews']);
+                $locationSummaries[] = $payload['summary'];
 
                 $locationRating = $payload['summary']['overallRating'] ?? null;
                 $locationCount = $payload['summary']['totalReviewCount'] ?? null;
@@ -143,9 +149,11 @@ class SyncService extends Component
                 $totalReviewCount = count($reviews);
             }
 
+            $locationSummaries[] = $this->buildSummary($overallRating, $totalReviewCount, null, '', 'All Locations');
+
             return [
                 'reviews' => $reviews,
-                'summary' => $this->buildSummary($overallRating, $totalReviewCount, null),
+                'summaries' => $locationSummaries,
             ];
         }
 
@@ -158,10 +166,12 @@ class SyncService extends Component
         $weightedTotal = 0.0;
         $weightedCount = 0;
         $totalReviewCount = 0;
+        $locationSummaries = [];
 
         foreach ($locationIds as $locationId) {
             $payload = $this->fetchBusinessProfileReviewsWithSummary($locationId, $perLocationMax);
             $reviews = array_merge($reviews, $payload['reviews']);
+            $locationSummaries[] = $payload['summary'];
 
             $locationRating = $payload['summary']['overallRating'] ?? null;
             $locationCount = $payload['summary']['totalReviewCount'] ?? null;
@@ -177,9 +187,11 @@ class SyncService extends Component
             $totalReviewCount = count($reviews);
         }
 
+        $locationSummaries[] = $this->buildSummary($overallRating, $totalReviewCount, null, '', 'All Locations');
+
         return [
             'reviews' => $reviews,
-            'summary' => $this->buildSummary($overallRating, $totalReviewCount, null),
+            'summaries' => $locationSummaries,
         ];
     }
 
@@ -269,10 +281,13 @@ class SyncService extends Component
 
         return [
             'reviews' => $reviews,
-            'summary' => [
-                'overallRating' => $overallRating,
-                'totalReviewCount' => $totalReviewCount,
-            ],
+            'summary' => $this->buildSummary(
+                $overallRating,
+                $totalReviewCount,
+                null,
+                $locationResource,
+                $locationDisplayName
+            ),
         ];
     }
 
@@ -402,7 +417,9 @@ class SyncService extends Component
             'summary' => $this->buildSummary(
                 isset($body['rating']) && is_numeric($body['rating']) ? (float)$body['rating'] : null,
                 isset($body['userRatingCount']) && is_numeric($body['userRatingCount']) ? (int)$body['userRatingCount'] : null,
-                (string)($body['id'] ?? $placeId)
+                (string)($body['id'] ?? $placeId),
+                $locationId,
+                $locationName
             ),
         ];
     }
@@ -410,11 +427,19 @@ class SyncService extends Component
     /**
      * @return array<string, mixed>
      */
-    private function buildSummary(?float $overallRating, ?int $totalReviewCount, ?string $googlePlaceId): array
+    private function buildSummary(
+        ?float $overallRating,
+        ?int $totalReviewCount,
+        ?string $googlePlaceId,
+        string $sourceLocationId = '',
+        string $sourceLocationName = ''
+    ): array
     {
         $settings = Plugin::getInstance()->getSettings();
 
         return [
+            'sourceLocationId' => trim($sourceLocationId),
+            'sourceLocationName' => trim($sourceLocationName),
             'sourceMode' => $settings->syncSourceMode,
             'overallRating' => $overallRating !== null ? round($overallRating, 2) : null,
             'totalReviewCount' => $totalReviewCount,
@@ -426,21 +451,36 @@ class SyncService extends Component
     /**
      * @param array<string, mixed> $summary
      */
-    private function saveSummary(array $summary): void
+    private function saveSummaries(array $summaries): void
     {
-        $payload = [
-            'sourceMode' => (string)($summary['sourceMode'] ?? 'mock'),
-            'overallRating' => isset($summary['overallRating']) ? (float)$summary['overallRating'] : null,
-            'totalReviewCount' => isset($summary['totalReviewCount']) ? (int)$summary['totalReviewCount'] : null,
-            'googlePlaceId' => isset($summary['googlePlaceId']) ? (string)$summary['googlePlaceId'] : null,
-            'lastSyncedAt' => DbHelper::prepareDateForDb($summary['lastSyncedAt'] ?? new DateTime()),
-        ];
+        foreach ($summaries as $summary) {
+            if (!is_array($summary)) {
+                continue;
+            }
 
-        DbHelper::upsert(
-            '{{%googlereviews_summary}}',
-            array_merge(['id' => 1], $payload),
-            $payload
-        );
+            $sourceLocationId = trim((string)($summary['sourceLocationId'] ?? ''));
+            $sourceLocationName = trim((string)($summary['sourceLocationName'] ?? ''));
+
+            if ($sourceLocationId === '' && $sourceLocationName === '') {
+                $sourceLocationName = 'All Locations';
+            }
+
+            $payload = [
+                'sourceLocationId' => $sourceLocationId,
+                'sourceLocationName' => $sourceLocationName,
+                'sourceMode' => (string)($summary['sourceMode'] ?? 'mock'),
+                'overallRating' => isset($summary['overallRating']) ? (float)$summary['overallRating'] : null,
+                'totalReviewCount' => isset($summary['totalReviewCount']) ? (int)$summary['totalReviewCount'] : null,
+                'googlePlaceId' => isset($summary['googlePlaceId']) ? (string)$summary['googlePlaceId'] : null,
+                'lastSyncedAt' => DbHelper::prepareDateForDb($summary['lastSyncedAt'] ?? new DateTime()),
+            ];
+
+            DbHelper::upsert(
+                '{{%googlereviews_summary}}',
+                ['sourceLocationId' => $sourceLocationId],
+                $payload
+            );
+        }
     }
 
     /**

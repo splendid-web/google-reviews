@@ -303,3 +303,12 @@ Use optional location filters:
 {% set oneLocation = craft.googleReviews.reviews(50, null, 'places/ChIJ123...', null).all() %}
 {% set byName = craft.googleReviews.reviews(50, null, null, 'Hotel London').all() %}
 ```
+
+Summary calls (aggregate vs per-location):
+
+```twig
+{% set allSummary = craft.googleReviews.summary() %}
+{% set oneLocationSummary = craft.googleReviews.summary('locations/1234567890123456789') %}
+```
+
+`summary('location-id')` uses Google-provided totals/ratings saved for that location during sync.

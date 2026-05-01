@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added optional location-specific summary lookup via `craft.googleReviews.summary(sourceLocationId)` while preserving aggregate `summary()` behavior.
+- Added location-aware summary storage in `googlereviews_summary` so sync now writes one summary row per location plus an aggregate row.
+
 ## 1.0.7 - 2026-04-29
 
 - Added multi-location sync support for both Places API and Business Profile API by allowing location settings to resolve to either a single ID or a JSON array of IDs.

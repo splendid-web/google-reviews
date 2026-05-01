@@ -55,6 +55,8 @@ class Install extends Migration
         if (!$this->db->tableExists($summaryTable)) {
             $this->createTable($summaryTable, [
                 'id' => $this->primaryKey(),
+                'sourceLocationId' => $this->string(255)->notNull()->defaultValue(''),
+                'sourceLocationName' => $this->string(255)->notNull()->defaultValue(''),
                 'sourceMode' => $this->string(50)->notNull()->defaultValue('mock'),
                 'overallRating' => $this->decimal(3, 2),
                 'totalReviewCount' => $this->integer(),
@@ -64,6 +66,8 @@ class Install extends Migration
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid' => $this->uid(),
             ]);
+
+            $this->createIndex('idx_googlereviews_summary_sourceLocationId_unique', $summaryTable, ['sourceLocationId'], true);
         }
 
         return true;
