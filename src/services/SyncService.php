@@ -477,7 +477,7 @@ class SyncService extends Component
 
             DbHelper::upsert(
                 '{{%googlereviews_summary}}',
-                ['sourceLocationId' => $sourceLocationId],
+                $payload,
                 $payload
             );
         }
