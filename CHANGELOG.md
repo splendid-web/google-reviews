@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## Unreleased
+## 1.0.8 - 2026-05-29
 
 - Fixed duplicate review rows after upgrading to 1.0.7+ by removing legacy un-scoped review elements (empty `sourceLocationId`) via migration and pruning stale imported rows after each sync.
 - Stabilised Places API review IDs so reordering in Google's response no longer creates duplicate rows.
