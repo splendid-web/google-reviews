@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Fixed duplicate review rows after upgrading to 1.0.7+ by removing legacy un-scoped review elements (empty `sourceLocationId`) via migration and pruning stale imported rows after each sync.
+- Stabilised Places API review IDs so reordering in Google's response no longer creates duplicate rows.
 - Added optional location-specific summary lookup via `craft.googleReviews.summary(sourceLocationId)` while preserving aggregate `summary()` behavior.
 - Added location-aware summary storage in `googlereviews_summary` so sync now writes one summary row per location plus an aggregate row.
 

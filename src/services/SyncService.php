@@ -41,6 +41,7 @@ class SyncService extends Component
             $rawReviews = $syncPayload['reviews'];
             $result->fetched = count($rawReviews);
 
+            $syncedIds = [];
             foreach ($rawReviews as $rawReview) {
                 $normalized = $this->normalizeReview($rawReview);
 
@@ -50,7 +51,12 @@ class SyncService extends Component
                 }
 
                 $this->upsertReviewEntry($normalized);
+                $syncedIds[] = (string)$normalized['googleReviewId'];
                 $result->upserted++;
+            }
+
+            if (!$settings->isMockMode() && $syncedIds !== []) {
+                $result->archived += $this->removeStaleReviews($syncedIds);
             }
         } catch (Throwable $exception) {
             $message = $exception->getMessage();
@@ -87,6 +93,33 @@ class SyncService extends Component
             }
 
             if (Craft::$app->getElements()->deleteElement($mockReview)) {
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
+    /**
+     * @param string[] $syncedIds
+     */
+    private function removeStaleReviews(array $syncedIds): int
+    {
+        $staleReviews = GoogleReview::find()
+            ->status(null)
+            ->source('Google')
+            ->andWhere(['googlereviews_reviews.isImported' => true])
+            ->andWhere(['not like', 'googlereviews_reviews.googleReviewId', 'mock-%', false])
+            ->andWhere(['not in', 'googlereviews_reviews.googleReviewId', $syncedIds])
+            ->all();
+
+        $removed = 0;
+        foreach ($staleReviews as $staleReview) {
+            if (!$staleReview instanceof GoogleReview) {
+                continue;
+            }
+
+            if (Craft::$app->getElements()->deleteElement($staleReview)) {
                 $removed++;
             }
         }
@@ -382,7 +415,7 @@ class SyncService extends Component
         }
         $placeUrl = (string)($body['googleMapsUri'] ?? '');
         $normalizedRaw = [];
-        foreach ($reviews as $index => $review) {
+        foreach ($reviews as $review) {
             if (!is_array($review)) {
                 continue;
             }
@@ -395,7 +428,9 @@ class SyncService extends Component
             $authorUri = (string)($authorAttribution['uri'] ?? '');
             $authorPhotoUri = (string)($authorAttribution['photoUri'] ?? '');
 
-            $rawId = $authorUri . '|' . $publishTime . '|' . $index;
+            $rawId = $authorUri !== ''
+                ? $authorUri . '|' . $publishTime
+                : md5($publishTime . '|' . $reviewText);
             $normalizedRaw[] = [
                 'reviewId' => 'places-' . md5($rawId),
                 '_sourceLocationId' => $locationId,
