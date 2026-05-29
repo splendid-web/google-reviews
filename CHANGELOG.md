@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.11 - 2026-05-29
+
+- Added `changelogUrl`, `developer`, `developerUrl`, and `documentationUrl` to `composer.json` so release notes render in the Craft Control Panel update screen.
+
 ## 1.0.10 - 2026-05-29
 
 - Fixed duplicate review rows after upgrading to 1.0.7+ by removing legacy un-scoped review elements (empty `sourceLocationId`) via migration and pruning stale imported rows after each sync.
