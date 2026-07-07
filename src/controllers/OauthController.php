@@ -104,7 +104,7 @@ class OauthController extends Controller
             }
 
             $settings->oauthRefreshToken = $refreshToken;
-            if (!$plugin->saveSettings($settings->toArray())) {
+            if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings->toArray())) {
                 $errors = implode('; ', $settings->getErrorSummary(true));
                 $session->setError('Google connected but plugin settings could not be saved: ' . $errors);
                 return $this->redirect($redirect);

@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.12 - 2026-07-07
+
+- Fixed Google OAuth connect flow failing to save the refresh token after authorization (`savePluginSettings` instead of non-existent `saveSettings`).
+
 ## 1.0.11 - 2026-05-29
 
 - Added `changelogUrl`, `developer`, `developerUrl`, and `documentationUrl` to `composer.json` so release notes render in the Craft Control Panel update screen.
