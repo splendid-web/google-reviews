@@ -47,7 +47,7 @@
 
 {{ forms.autosuggestField({
     label: "GBP API Account ID",
-    instructions: "Google Business Profile account identifier. Env values supported.",
+    instructions: "Default Google Business Profile account identifier. Used for a single location ID, or a JSON array of location IDs. Not required when Location ID is a JSON array of account/location pairs. Env values supported.",
     id: "googleAccountId",
     name: "googleAccountId",
     value: settings.googleAccountId,
@@ -56,7 +56,7 @@
 
 {{ forms.autosuggestField({
     label: "GBP API Location ID",
-    instructions: "Google Business Profile location identifier. For multi-location, env var may resolve to a JSON array of IDs.",
+    instructions: "Google Business Profile location identifier. Use a single ID, a JSON array of IDs (all using Account ID above), or a JSON array of {\"account\":\"...\",\"location\":\"...\"} pairs for locations across multiple GBP accounts. Env values supported.",
     id: "googleLocationId",
     name: "googleLocationId",
     value: settings.googleLocationId,

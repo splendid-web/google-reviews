@@ -147,8 +147,8 @@ Copy `locationId` from `name` (for example: `locations/9876543210` -> `987654321
 
 - `Enable Sync` = on
 - `Review Source Mode` = `Business Profile API`
-- `GBP API Account ID` = your account ID
-- `GBP API Location ID` = your location ID
+- `GBP API Account ID` = your account ID (default account for a single location, or a JSON array of location IDs)
+- `GBP API Location ID` = your location ID (see [Multiple GBP accounts](#multiple-gbp-accounts) if locations sit under more than one account)
 - `GBP API OAuth Client ID` = your OAuth client ID
 - `GBP API OAuth Client Secret` = your OAuth client secret
 - `GBP API OAuth Refresh Token` = your refresh token
@@ -287,7 +287,20 @@ Use `places[].id` from the response as your plugin `Place ID`.
 - If you need more than 5 reviews and owner replies, use Business Profile mode.
 - Owner replies are only available via Business Profile mode, not Places mode.
 - Keep credentials in environment variables where possible.
-- Multi-location is supported by setting `Places API Place ID` or `GBP API Location ID` to an env var that resolves to a JSON array of IDs, eg: `GOOGLE_REVIEWS_LOCATION_ID=["1234567890123456789","9876543210987654321"]` (or a single string ID for one location).
+- Multi-location is supported by setting `Places API Place ID` or `GBP API Location ID` to an env var that resolves to a JSON array of IDs, eg: `GOOGLE_REVIEWS_LOCATION_ID=["1234567890123456789","9876543210987654321"]` (or a single string ID for one location). Existing single-account env vars keep working as before.
+- Locations under **different** Google Business Profile accounts can use account/location pairs in the same Location ID env var. One OAuth connection is still required, and that Google user must be able to access every account.
+
+## Multiple GBP accounts
+
+If every location belongs to the same GBP account, keep using Account ID plus a single location ID or a JSON array of IDs.
+
+If you manage several client accounts with one Google user, set Location ID to a JSON array of pairs instead. Account ID can be left empty in that case:
+
+```bash
+GOOGLE_REVIEWS_LOCATION_ID=[{"account":"111111111","location":"222222222"},{"account":"333333333","location":"444444444"}]
+```
+
+Twig filtering is unchanged: pass `sourceLocationId` into `craft.googleReviews.reviews()` and `craft.googleReviews.summary()`.
 
 ## Multi-location filtering in Twig
 

@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.1.0-beta.1 - 2026-09-03
+
+- Added optional multi-account Google Business Profile sync: `GBP API Location ID` can resolve to a JSON array of `{"account":"...","location":"..."}` pairs so locations from different GBP accounts can be synced with one OAuth connection.
+- Preserved existing Account ID + single location ID / JSON array of location IDs configuration so current env vars keep working.
+
 ## 1.0.12 - 2026-07-07
 
 - Fixed Google OAuth connect flow failing to save the refresh token after authorization (`savePluginSettings` instead of non-existent `saveSettings`).

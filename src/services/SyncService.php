@@ -190,9 +190,9 @@ class SyncService extends Component
             ];
         }
 
-        $locationIds = $settings->getParsedGoogleLocationIds();
-        if ($locationIds === []) {
-            throw new RuntimeException('At least one Google location ID is required when Business Profile mode is selected.');
+        $locationPairs = $settings->getParsedGoogleLocationPairs();
+        if ($locationPairs === []) {
+            throw new RuntimeException('At least one Google location ID is required when Business Profile mode is selected. For multiple GBP accounts, use a JSON array of {"account":"...","location":"..."} pairs, or set GBP API Account ID for a single account.');
         }
 
         $reviews = [];
@@ -201,8 +201,8 @@ class SyncService extends Component
         $totalReviewCount = 0;
         $locationSummaries = [];
 
-        foreach ($locationIds as $locationId) {
-            $payload = $this->fetchBusinessProfileReviewsWithSummary($locationId, $perLocationMax);
+        foreach ($locationPairs as $pair) {
+            $payload = $this->fetchBusinessProfileReviewsWithSummary($pair['locationId'], $perLocationMax, $pair['accountId']);
             $reviews = array_merge($reviews, $payload['reviews']);
             $locationSummaries[] = $payload['summary'];
 
@@ -231,10 +231,10 @@ class SyncService extends Component
     /**
      * @return array{reviews: array<int, array<string, mixed>>, summary: array<string, mixed>}
      */
-    private function fetchBusinessProfileReviewsWithSummary(string $locationId, int $max): array
+    private function fetchBusinessProfileReviewsWithSummary(string $locationId, int $max, string $accountId): array
     {
         $settings = Plugin::getInstance()->getSettings();
-        $accountId = trim($settings->getParsedGoogleAccountId());
+        $accountId = trim($accountId);
         $clientId = trim($settings->getParsedOAuthClientId());
         $clientSecret = trim($settings->getParsedOAuthClientSecret());
         $refreshToken = trim($settings->getParsedOAuthRefreshToken());

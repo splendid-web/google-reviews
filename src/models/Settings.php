@@ -83,7 +83,53 @@ class Settings extends Model
      */
     public function getParsedGoogleLocationIds(): array
     {
-        return $this->parseEnvList($this->googleLocationId);
+        $ids = [];
+        foreach ($this->getParsedGoogleLocationPairs() as $pair) {
+            $ids[] = $pair['locationId'];
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Location IDs paired with the GBP account that owns them.
+     *
+     * Supports a single location ID, a JSON array of IDs (all using Account ID),
+     * or a JSON array of {"account":"...","location":"..."} objects for multiple accounts.
+     *
+     * @return array<int, array{accountId: string, locationId: string}>
+     */
+    public function getParsedGoogleLocationPairs(): array
+    {
+        $parsed = trim(App::parseEnv($this->googleLocationId));
+        $defaultAccount = trim($this->getParsedGoogleAccountId());
+
+        if ($parsed === '') {
+            return [];
+        }
+
+        $decoded = json_decode($parsed, true);
+        if (!is_array($decoded)) {
+            return $this->locationPair($defaultAccount, $parsed);
+        }
+
+        if ($this->isLocationPairItem($decoded)) {
+            return $this->locationPairFromItem($decoded, $defaultAccount);
+        }
+
+        $pairs = [];
+        foreach ($decoded as $item) {
+            if ($this->isLocationPairItem($item)) {
+                $pairs = array_merge($pairs, $this->locationPairFromItem($item, $defaultAccount));
+                continue;
+            }
+
+            if (is_string($item)) {
+                $pairs = array_merge($pairs, $this->locationPair($defaultAccount, $item));
+            }
+        }
+
+        return $this->uniqueLocationPairs($pairs);
     }
 
     public function getParsedPlacesApiKey(): string
@@ -132,5 +178,63 @@ class Settings extends Model
         }
 
         return [$parsed];
+    }
+
+    /**
+     * @param mixed $item
+     */
+    private function isLocationPairItem(mixed $item): bool
+    {
+        if (!is_array($item) || array_is_list($item)) {
+            return false;
+        }
+
+        $location = $item['location'] ?? $item['locationId'] ?? null;
+
+        return is_string($location) && trim($location) !== '';
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @return array<int, array{accountId: string, locationId: string}>
+     */
+    private function locationPairFromItem(array $item, string $defaultAccount): array
+    {
+        $locationId = trim((string)($item['location'] ?? $item['locationId'] ?? ''));
+        $accountId = trim((string)($item['account'] ?? $item['accountId'] ?? $defaultAccount));
+
+        return $this->locationPair($accountId, $locationId);
+    }
+
+    /**
+     * @return array<int, array{accountId: string, locationId: string}>
+     */
+    private function locationPair(string $accountId, string $locationId): array
+    {
+        $accountId = trim($accountId);
+        $locationId = trim($locationId);
+        if ($accountId === '' || $locationId === '') {
+            return [];
+        }
+
+        return [[
+            'accountId' => $accountId,
+            'locationId' => $locationId,
+        ]];
+    }
+
+    /**
+     * @param array<int, array{accountId: string, locationId: string}> $pairs
+     * @return array<int, array{accountId: string, locationId: string}>
+     */
+    private function uniqueLocationPairs(array $pairs): array
+    {
+        $unique = [];
+        foreach ($pairs as $pair) {
+            $key = $pair['accountId'] . "\n" . $pair['locationId'];
+            $unique[$key] = $pair;
+        }
+
+        return array_values($unique);
     }
 }
