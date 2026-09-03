@@ -30,7 +30,7 @@ Reviews are fetched on a schedule and stored in Craft, instead of being requeste
 ## Requirements
 
 - Craft CMS `^5.3.0`
-- PHP version compatible with your Craft 5 install
+- PHP `^8.2` (compatible with your Craft 5 install)
 
 ## Installation
 
@@ -232,6 +232,22 @@ See example template in `/templates/_components/reviews-example.twig`.
 {% else %}
   <p class="google-reviews-empty">No reviews available.</p>
 {% endif %}
+```
+
+## Development / Tests
+
+Unit tests cover settings parsing (including multi-account GBP pairs), sync helpers, and summary location ID matching. They do not call Google APIs or need a live Craft database.
+
+```bash
+composer install
+composer test
+```
+
+If installing Craft CMS into this package is inconvenient, download PHPUnit and run the same suite:
+
+```bash
+curl -fsSL -o phpunit.phar https://phar.phpunit.de/phpunit-11.phar
+composer test
 ```
 
 ## Console Command

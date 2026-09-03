@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 - Added optional multi-account Google Business Profile sync: `GBP API Location ID` can resolve to a JSON array of `{"account":"...","location":"..."}` pairs so locations from different GBP accounts can be synced with one OAuth connection.
 - Preserved existing Account ID + single location ID / JSON array of location IDs configuration so current env vars keep working.
+- Added a PHPUnit unit-test suite (`composer test`) covering settings parsing, sync helpers, and summary location ID candidates.
 
 ## 1.0.12 - 2026-07-07
 

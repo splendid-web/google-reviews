@@ -1,0 +1,40 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$root = dirname(__DIR__);
+$candidates = [
+    $root . '/vendor/bin/phpunit',
+    $root . '/phpunit.phar',
+];
+
+$runner = null;
+foreach ($candidates as $candidate) {
+    if (is_file($candidate)) {
+        $runner = $candidate;
+        break;
+    }
+}
+
+if ($runner === null) {
+    fwrite(STDERR, <<<TXT
+No PHPUnit runner found.
+
+Install one of:
+  composer install
+  curl -fsSL -o phpunit.phar https://phar.phpunit.de/phpunit-11.phar
+
+Then run: composer test
+TXT);
+    exit(1);
+}
+
+$phpunitArgs = array_slice($argv, 1);
+$command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($runner);
+foreach ($phpunitArgs as $arg) {
+    $command .= ' ' . escapeshellarg($arg);
+}
+
+passthru($command, $exitCode);
+exit($exitCode);
